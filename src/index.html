@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'self' data:; object-src 'none'; base-uri 'none'"
+    />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AI Credit Checker</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="../assets/app.png" width="46" height="46" alt="" />
+        <div>AI Credit<br />Checker<span id="version">2.0</span></div>
+      </div>
+      <div class="nav-label">YOUR WORKSPACE</div>
+      <nav aria-label="Main navigation">
+        <button data-view="overview" class="nav active" aria-current="page">
+          <span class="nav-icon">◫</span> Overview
+        </button>
+        <button data-view="activity" class="nav">
+          <span class="nav-icon">↗</span> Activity
+        </button>
+        <button data-view="settings" class="nav">
+          <span class="nav-icon">☷</span> Preferences
+        </button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="local-label"><span class="dot"></span> Local by design</div>
+        <p>Your accounts stay<br />on your Mac.</p>
+        <button id="repository" class="text-button">View on GitHub ↗</button>
+      </div>
+    </aside>
+    <div class="workspace">
+      <div class="topline">
+        <span>YOUR AI, ACCOUNTED FOR.</span
+        ><span class="badge">macOS · 2.0</span>
+      </div>
+      <main>
+        <section id="view-overview" class="view">
+          <header class="page-heading">
+            <div>
+              <h1>Balance overview<span class="title-dot">.</span></h1>
+              <p>A little clarity. Right where you need it.</p>
+            </div>
+            <button id="check-all" class="primary">↻ &nbsp; Check both</button>
+          </header>
+          <div id="migration" class="notice" hidden></div>
+          <div class="balance-grid">
+            <article class="balance-card">
+              <div class="card-heading">
+                <span class="provider-mark">P</span>
+                <div>
+                  <h2>Perplexity</h2>
+                  <p>Organization credit pool</p>
+                </div>
+                <span id="perplexity-badge" class="state-badge"
+                  >Not connected</span
+                >
+              </div>
+              <div class="amount" id="perplexity-value">∞</div>
+              <div class="amount-label">CREDITS AVAILABLE</div>
+              <svg
+                id="perplexity-chart"
+                class="sparkline"
+                viewBox="0 0 300 36"
+                role="img"
+                aria-label="Recent credit observations"
+              ></svg>
+              <p class="status" id="perplexity-status">
+                Connect your account to see its balance.
+              </p>
+              <div class="card-actions">
+                <button data-open="perplexity" class="secondary">
+                  Open account ↗</button
+                ><button data-check="perplexity" class="text-button">
+                  Check now
+                </button>
+              </div>
+            </article>
+            <article class="balance-card">
+              <div class="card-heading">
+                <span class="provider-mark">O</span>
+                <div>
+                  <h2>OpenRouter</h2>
+                  <p>Pay-as-you-go account</p>
+                </div>
+                <span id="openrouter-badge" class="state-badge"
+                  >Not connected</span
+                >
+              </div>
+              <div class="amount" id="openrouter-value">∞</div>
+              <div class="amount-label">USD AVAILABLE</div>
+              <svg
+                id="openrouter-chart"
+                class="sparkline"
+                viewBox="0 0 300 36"
+                role="img"
+                aria-label="Recent balance observations"
+              ></svg>
+              <p class="status" id="openrouter-status">
+                Connect your account to see its balance.
+              </p>
+              <div class="card-actions">
+                <button data-open="openrouter" class="secondary">
+                  Open account ↗</button
+                ><button data-check="openrouter" class="text-button">
+                  Check now
+                </button>
+              </div>
+            </article>
+          </div>
+          <section class="menu-panel">
+            <div>
+              <span class="eyebrow">ALWAYS A GLANCE AWAY</span>
+              <h2>Give your credits a home<br />in the menu bar.</h2>
+              <p>Quietly visible. Without another tab.</p>
+            </div>
+            <div class="menu-controls">
+              <div class="menu-preview">
+                <span class="preview-desktop">Your Mac</span>
+                <div class="preview-reading">
+                  <img
+                    src="../assets/menuTemplate@2x.png"
+                    width="18"
+                    height="18"
+                    alt="AI Credit Checker icon"
+                  /><span id="menu-preview-value">∞ · ∞</span>
+                </div>
+                <span class="preview-clock" id="preview-clock"></span>
+              </div>
+              <label for="menu-mode">Display next to the icon</label
+              ><select id="menu-mode">
+                <option value="both">Both balances</option>
+                <option value="perplexity">Perplexity only</option>
+                <option value="openrouter">OpenRouter only</option>
+                <option value="icon">Icon only</option>
+              </select>
+            </div>
+          </section>
+          <section class="automation-bar">
+            <div>
+              <h3>Let it check for you</h3>
+              <p id="schedule-status">Automatic checks are paused.</p>
+            </div>
+            <label class="switch"
+              ><input id="background" type="checkbox" /><span
+                class="switch-track"
+              ></span
+              ><span class="sr-only">Check every ten minutes</span></label
+            >
+          </section>
+          <p class="footnote">
+            ∞ means unavailable or stale, never unlimited. Credit units and USD
+            are not interchangeable.
+          </p>
+        </section>
+        <section id="view-activity" class="view" hidden>
+          <header class="page-heading">
+            <div>
+              <h1>A useful paper trail<span class="title-dot">.</span></h1>
+              <p>Successful readings and failures, in one place.</p>
+            </div>
+            <button id="export" class="secondary">Export JSON ↗</button>
+          </header>
+          <div class="activity-toolbar">
+            <label for="history-filter">Account</label
+            ><select id="history-filter">
+              <option value="all">All accounts</option>
+              <option value="perplexity">Perplexity</option>
+              <option value="openrouter">OpenRouter</option></select
+            ><span id="history-count"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Account</th>
+                  <th>Checked</th>
+                  <th>Balance</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="history"></tbody>
+            </table>
+            <p id="history-empty" class="empty">
+              Your first check starts the story.
+            </p>
+          </div>
+          <p class="footnote">
+            Stores up to 2,000 checks locally. Exports contain observations, not
+            browser cookies or passwords.
+          </p>
+        </section>
+        <section id="view-settings" class="view" hidden>
+          <header class="page-heading">
+            <div>
+              <h1>Make it yours<span class="title-dot">.</span></h1>
+              <p>Small controls. No complicated setup.</p>
+            </div>
+          </header>
+          <div class="settings-panel">
+            <div class="setting-row">
+              <div>
+                <h3>Compact menu-bar numbers</h3>
+                <p>
+                  Use 12.4K instead of 12,400 credits. USD keeps two decimals.
+                </p>
+              </div>
+              <label class="switch"
+                ><input id="compact" type="checkbox" /><span
+                  class="switch-track"
+                ></span
+                ><span class="sr-only">Compact menu-bar numbers</span></label
+              >
+            </div>
+            <div class="setting-row">
+              <div>
+                <h3>Open at login</h3>
+                <p>
+                  Start quietly in the menu bar when you sign into your Mac.
+                </p>
+              </div>
+              <label class="switch"
+                ><input id="launch-login" type="checkbox" /><span
+                  class="switch-track"
+                ></span
+                ><span class="sr-only">Open at login</span></label
+              >
+            </div>
+            <div class="setting-row">
+              <div>
+                <h3>Ten-minute checks</h3>
+                <p>
+                  Enable on Overview or in the menu-bar menu. Close account
+                  windows after sign-in; visible windows are skipped to avoid
+                  interrupting you.
+                </p>
+              </div>
+              <span class="badge">Local only</span>
+            </div>
+          </div>
+          <div class="privacy-panel">
+            <img src="../assets/app.png" width="58" height="58" alt="" />
+            <div>
+              <h2>Your account. Your Mac.</h2>
+              <p>
+                No cloud relay, telemetry, AI inference or private API guessing.
+                Website sign-ins live in isolated local browser sessions. This
+                app is independent of Perplexity and OpenRouter.
+              </p>
+            </div>
+          </div>
+          <div class="data-location">
+            <h3>Local data &amp; privacy</h3>
+            <code id="storage"></code
+            ><button id="show-data" class="text-button">
+              Show in Finder ↗
+            </button>
+          </div>
+          <div class="settings-footer">
+            <span
+              >AI Credit Checker · <span id="settings-version"></span> ·
+              MIT</span
+            ><button id="quit" class="secondary">Quit app</button>
+          </div>
+        </section>
+        <div id="notice" role="status"></div>
+      </main>
+    </div>
+    <script src="renderer.js"></script>
+  </body>
+</html>

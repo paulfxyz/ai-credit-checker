@@ -1,0 +1,25 @@
+{
+  "name": "ai-credit-checker",
+  "productName": "AI Credit Checker",
+  "version": "2.0.0",
+  "description": "Your AI credits, quietly in your macOS menu bar.",
+  "main": "src/main.cjs",
+  "author": "Paul Fleury",
+  "license": "MIT",
+  "repository": "https://github.com/paulfxyz/ai-credit-checker",
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/unit.test.cjs",
+    "test:smoke": "node tests/smoke.cjs",
+    "assets": "node scripts/build-assets.cjs",
+    "package:mac": "electron-packager . 'AI Credit Checker' --platform=darwin --arch=arm64 --electron-version=44.5.1 --out=dist --overwrite --app-bundle-id=com.paulfleury.aicreditchecker --app-category-type=public.app-category.utilities --icon=assets/app.icns --ignore='^/(tests|docs|scripts|dist|node_modules|\\.github|package-lock.json|README.md|INSTALL.md|CHANGELOG.md|CONTRIBUTING.md|SECURITY.md|PRIVACY.md)'"
+  },
+  "devDependencies": {
+    "@electron/packager": "18.4.4",
+    "electron": "44.5.1",
+    "jsdom": "25.0.1",
+    "playwright": "1.58.2",
+    "sharp": "0.34.5"
+  }
+}
