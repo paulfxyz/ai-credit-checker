@@ -1,0 +1,24 @@
+name: Package macOS release
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Package and verify ad-hoc signature
+        run: bash scripts/package-release.sh
+      - name: Publish 2.0.0 release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload v2.0.0 dist/AI-Credit-Checker-2.0.0-macOS-arm64.zip dist/SHA256SUMS.txt --clobber
+          gh release edit v2.0.0 --target "$GITHUB_SHA" --draft=false --latest
