@@ -7,9 +7,17 @@
       .trim();
   function number(text, provider) {
     let s = norm(text);
-    if (provider === "openrouter") {
-      if (!/^\$(?:\d+|\d{1,3}(?:,\d{3})+)\.\d{2}$/.test(s)) return null;
-      return Number(s.replace(/[$,]/g, ""));
+    if (["openrouter", "fly", "runware"].includes(provider)) {
+      s = s.replace(/^\$\s+/, "$");
+      const currency =
+        provider === "runware"
+          ? /^\$(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,9})?$/
+          : /^\$(?:\d+|\d{1,3}(?:,\d{3})+)\.\d{2}$/;
+      if (!currency.test(s)) return null;
+      const value = Number(s.replace(/[$,]/g, ""));
+      return Number.isFinite(value) && value <= Number.MAX_SAFE_INTEGER
+        ? value
+        : null;
     }
     s = s.replace(/\s+credits$/i, "");
     if (!/^(?:\d+|\d{1,3}(?:,\d{3})+|\d{1,3}(?: \d{3})+)$/.test(s)) return null;
@@ -38,6 +46,8 @@
     return set.length ? set[0] : null;
   }
   function read(doc, provider) {
+    if (!["perplexity", "openrouter", "fly", "runware"].includes(provider))
+      throw new Error("Unknown provider.");
     if (!doc.body) throw new Error("Waiting for page content.");
     // The live UK-English account page says "Available organisation credits".
     // Accept only these explicit available-pool labels, not generic credits/usage.
@@ -48,18 +58,26 @@
             "available organization credits",
             "available organisation credits",
           ]
-        : ["total available"];
+        : provider === "fly"
+          ? ["credit balance"]
+          : provider === "runware"
+            ? ["current balance"]
+            : ["total available"];
+    const labelledAmount =
+      provider === "perplexity"
+        ? /^Available (?:org|organization|organisation) credits\s*:?\s+(.+)$/i
+        : provider === "fly"
+          ? /^Credit Balance\s*:?\s+(.+)$/i
+          : provider === "runware"
+            ? /^Current Balance\s*:?\s+(.+)$/i
+            : /^Total available(?: credits)?\s*:?\s+(.+)$/i;
     const isLabel = (text) => expected.includes(norm(text).toLowerCase());
     // Use the account-specific available-balance label, not personal header usage.
     const aria = [...doc.querySelectorAll("[aria-label]")]
       .filter(visible)
       .map((el) => {
         const text = norm(el.getAttribute("aria-label"));
-        const re =
-          provider === "perplexity"
-            ? /^Available (?:org|organization|organisation) credits:\s*(.+)$/i
-            : /^Total available credits:\s*(.+)$/i;
-        const match = text.match(re);
+        const match = text.match(labelledAmount);
         return match ? number(match[1], provider) : null;
       });
     const ariaValue = exact(aria);
@@ -103,6 +121,17 @@
           .filter(
             (el) => visible(el) && !el.closest('button,table,[role="tooltip"]'),
           )
+          // A numeric wrapper can contain styled fractional digits. Keep the full
+          // amount, not a truncated child such as "$39.87" inside "$39.872".
+          .filter((el) => {
+            for (
+              let parent = el.parentElement;
+              parent && parent !== card;
+              parent = parent.parentElement
+            )
+              if (number(parent.textContent, provider) !== null) return false;
+            return true;
+          })
           .map((el) => number(el.textContent, provider));
         const value = exact(candidates);
         if (value !== null) {
@@ -123,12 +152,15 @@
       .filter(Boolean);
     const values = [];
     for (let i = 0; i < lines.length; i++) {
-      if (isLabel(lines[i])) values.push(number(lines[i + 1], provider));
-      const inline = lines[i].match(
-        provider === "perplexity"
-          ? /^Available (?:org|organization|organisation) credits\s*:?\s+([\d, ]+(?:\s+credits)?)$/i
-          : /^Total available\s*:?\s+(\$[\d,]+\.\d{2})$/i,
-      );
+      if (isLabel(lines[i])) {
+        const offset =
+          provider === "runware" &&
+          lines[i + 1]?.toLowerCase() === "available credits for api usage"
+            ? 2
+            : 1;
+        values.push(number(lines[i + offset], provider));
+      }
+      const inline = lines[i].match(labelledAmount);
       if (inline) values.push(number(inline[1], provider));
     }
     const lineValue = exact(values);

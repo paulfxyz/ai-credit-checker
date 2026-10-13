@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.1.0 · 2026-10-13
+
+- Add Fly.io organization Credit Balance and Runware Current Balance collectors.
+- Four-provider 2×2 dashboard, with configurable Fly.io organization.
+- All four counters in the menu-bar title and native dropdown, including icon-only mode.
+- Runware displays two decimals while preserving full observed precision in local history.
+- Changing Fly.io organization invalidates the old current balance and retains account-labelled history.
+- Preserve existing 2.0 sessions, history and app identity; migrate “Both balances” to “All four balances.”
+- Nine unit tests and four-provider Electron fixture coverage, updated screenshots and documentation.
+
+Fly.io and Runware live sign-in/extraction still require first-run acceptance on the target Mac.
+
 ## 2.0.0 · 2026-10-06
 
 First standalone public release as **AI Credit Checker**.

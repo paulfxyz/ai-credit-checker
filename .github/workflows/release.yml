@@ -16,9 +16,12 @@ jobs:
       - run: npm test
       - name: Package and verify ad-hoc signature
         run: bash scripts/package-release.sh
-      - name: Publish 2.0.0 release assets
+      - name: Publish versioned release assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload v2.0.0 dist/AI-Credit-Checker-2.0.0-macOS-arm64.zip dist/SHA256SUMS.txt --clobber
-          gh release edit v2.0.0 --target "$GITHUB_SHA" --draft=false --latest
+          VERSION="$(node -p 'require("./package.json").version')"
+          TAG="v${VERSION}"
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "AI Credit Checker ${VERSION}" --notes-file "docs/RELEASE-${VERSION}.md" --draft
+          gh release upload "$TAG" "dist/AI-Credit-Checker-${VERSION}-macOS-arm64.zip" dist/SHA256SUMS.txt
+          gh release edit "$TAG" --draft=false --latest

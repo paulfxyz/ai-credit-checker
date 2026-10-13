@@ -1,17 +1,23 @@
-# Install AI Credit Checker 2.0
+# Install AI Credit Checker 2.1
 
 This release is a standalone Apple Silicon Mac app. There is no extension, Stream Deck component, local server or Terminal-based installer.
 
 ## Install
 
-1. Download `AI-Credit-Checker-2.0.0-macOS-arm64.zip` from the GitHub release.
+1. Download `AI-Credit-Checker-2.1.0-macOS-arm64.zip` from the GitHub release.
 2. Extract the ZIP and move **AI Credit Checker.app** to Applications.
 3. Open it. This build is ad-hoc signed, not Developer ID signed or notarized. If macOS blocks opening, review the notice in **System Settings → Privacy & Security** and use **Open Anyway** if offered and you choose to trust the build.
 4. If macOS says the app is damaged, or an organization policy blocks it, stop and report the exact message. Do not disable Gatekeeper, remove quarantine with Terminal commands or bypass management policies.
 5. Click **Open account** under Perplexity. Sign in on the actual provider page, select your organization if necessary, and verify the available-credit balance is visible.
 6. Return to the dashboard and click **Check now**. A check can take up to approximately 65 seconds.
-7. Repeat for OpenRouter. Choose the menu-bar display mode from Overview.
-8. Close both account windows and turn on automatic checks. Keep the app running, with your Mac awake and online.
+7. Repeat for OpenRouter and Runware. For Fly.io, first enter and save the organization slug in its card: the name after `/dashboard/` in your Fly.io billing URL. Then open the account, sign in and check.
+8. Choose the menu-bar display mode from Overview. Close all account windows and turn on automatic checks. Keep the app running, with your Mac awake and online.
+
+## Updating from 2.0
+
+Quit AI Credit Checker from its menu before replacing the app in Applications. Do not delete its Application Support directory: 2.1 uses the same identity, provider sessions, preferences and history. Existing “Both balances” mode upgrades to “All four balances”; icon-only and individual-provider choices are preserved.
+
+Sign in to the new Fly.io and Runware accounts once. Changing the Fly.io organization clears its current displayed balance to prevent showing one organization's balance under another; previous history is retained with its organization label.
 
 ## Moving from Credit Monitor POC
 
@@ -29,9 +35,9 @@ After you verify the imported history, you may remove the old POC data yourself 
 
 ## Menu bar
 
-Choose **Both balances**, **Perplexity only**, **OpenRouter only** or **Icon only** on Overview or in the native menu. Preferences lets you switch between compact and exact credit counts.
+Choose **All four balances**, any individual provider or **Icon only** on Overview or in the native menu. Preferences lets you switch between compact and exact credit counts. All four counters remain in the native dropdown even in icon-only mode.
 
-Example: 12,499 Perplexity credits displays as `12.4K` in compact mode; USD remains `$85.20`. These are examples, not starting balances.
+Example: `P 12.4K · O $85.20 · F $24.50 · R $39.87`. A Runware observation of `39.872` displays as `$39.87`, rounded to two decimal places, while its full observed value stays in history and JSON exports. These are examples, not starting balances.
 
 Click the icon or its text to open the native menu, where you can open the dashboard, open an account page, check balances, pause automatic checks or quit.
 
@@ -58,6 +64,10 @@ To remove the app, first disable Open at login and quit it, then remove it from 
 **Infinity:** `∞` means no fresh successful observation, not an unlimited balance. Open the account page, complete login and use Check now.
 
 **Perplexity:** The implemented source is the available organization credit pool, not personal plan usage. The account must have access to the organization Usage page and one of the supported English labels.
+
+**Fly.io:** Save the correct organization slug before opening its account page. The parser reads “Credit Balance,” not invoice totals or remaining active-credit entries.
+
+**Runware:** The parser reads “Current Balance,” including a smaller fractional digit if present. The dashboard and menu intentionally display two decimals.
 
 **Login blocked:** Follow the provider's supported sign-in flow. If embedded browsers are refused, stop; this app does not copy sessions from another browser or bypass SSO policy.
 

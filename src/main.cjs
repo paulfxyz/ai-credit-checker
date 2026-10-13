@@ -22,24 +22,11 @@ const {
   normalizePreferences,
   importObservations,
 } = require("./model.cjs");
+const { SOURCES, providerURL, matchesPage } = require("./providers.cjs");
 
 // This override is for isolated automated tests. It never touches the real profile.
 if (process.env.AI_CREDIT_CHECKER_TEST_PROFILE && !app.isPackaged)
   app.setPath("userData", process.env.AI_CREDIT_CHECKER_TEST_PROFILE);
-const SOURCES = {
-  perplexity: {
-    name: "Perplexity",
-    url: "https://www.perplexity.ai/account/org/credits-usage",
-    unit: "credits",
-    scope: "organization",
-  },
-  openrouter: {
-    name: "OpenRouter",
-    url: "https://openrouter.ai/settings/credits",
-    unit: "USD",
-    scope: "account",
-  },
-};
 const INTERVAL = 10 * 60 * 1000;
 const STALE = STALE_MS;
 const windows = new Map(),
@@ -95,7 +82,13 @@ function updateTray() {
   if (process.platform === "darwin")
     tray.setTitle(title, { fontType: "monospacedDigit" });
   tray.setToolTip(
-    `AI Credit Checker\nPerplexity: ${display("perplexity", state.providers.perplexity)} credits\nOpenRouter: ${display("openrouter", state.providers.openrouter)} USD`,
+    "AI Credit Checker\n" +
+      Object.keys(SOURCES)
+        .map(
+          (id) =>
+            `${SOURCES[id].name}: ${display(id, state.providers[id])} ${SOURCES[id].unit}`,
+        )
+        .join("\n"),
   );
   const balanceRows = Object.keys(SOURCES).map((id) => ({
     label: `${SOURCES[id].name}   ${display(id, state.providers[id])}${busy.has(id) ? "  (checking)" : ""}`,
@@ -120,7 +113,7 @@ function updateTray() {
       { type: "separator" },
       ...balanceRows,
       { type: "separator" },
-      { label: "Check both accounts", enabled: !busy.size, click: checkAll },
+      { label: "Check all accounts", enabled: !busy.size, click: checkAll },
       {
         label: "Automatic checks",
         type: "checkbox",
@@ -131,9 +124,11 @@ function updateTray() {
         label: "Menu bar display",
         submenu: [
           ...[
-            ["both", "Both balances"],
+            ["all", "All four balances"],
             ["perplexity", "Perplexity only"],
             ["openrouter", "OpenRouter only"],
+            ["fly", "Fly.io only"],
+            ["runware", "Runware only"],
             ["icon", "Icon only"],
           ].map(([value, label]) => ({
             label,
@@ -150,7 +145,19 @@ function updateTray() {
   );
 }
 function setPreferences(input) {
-  const prefs = normalizePreferences(input);
+  const prefs = normalizePreferences({ ...state.preferences, ...input });
+  if (input?.flyOrganization && !prefs.flyOrganization)
+    throw new Error("Enter a valid Fly.io organization slug, not a URL.");
+  if (prefs.flyOrganization !== state.preferences.flyOrganization) {
+    if (busy.has("fly"))
+      throw new Error(
+        "Wait for the Fly.io check to finish before changing organization.",
+      );
+    delete state.providers.fly;
+    const win = windows.get("fly");
+    if (win && !win.isDestroyed()) win.destroy();
+    windows.delete("fly");
+  }
   if (
     process.platform === "darwin" &&
     prefs.launchAtLogin !== state.preferences.launchAtLogin
@@ -167,9 +174,17 @@ function checkAll() {
   for (const id of Object.keys(SOURCES)) void check(id);
 }
 function openAccount(id) {
+  const url = providerURL(id, state.preferences);
+  if (!url) {
+    showDashboard();
+    record(id, {
+      status: "error",
+      error: "Set your Fly.io organization slug in its card before connecting.",
+    });
+    return;
+  }
   const win = providerWindow(id, true);
-  if (!win.webContents.getURL())
-    void navigate(win, SOURCES[id].url).catch(() => {});
+  if (!win.webContents.getURL()) void navigate(win, url).catch(() => {});
 }
 function record(id, result) {
   const old = state.providers[id] || {};
@@ -181,17 +196,7 @@ function record(id, result) {
   publish();
 }
 function sourceMatches(id, value) {
-  try {
-    const u = new URL(value),
-      expected = new URL(SOURCES[id].url);
-    return (
-      u.protocol === "https:" &&
-      u.hostname === expected.hostname &&
-      u.pathname.replace(/\/$/, "") === expected.pathname
-    );
-  } catch {
-    return false;
-  }
+  return matchesPage(id, value, state.preferences);
 }
 function securePreferences(id) {
   return {
@@ -304,7 +309,7 @@ async function readBalance(win, id) {
     try {
       const result = await Promise.race([
         win.webContents.executeJavaScript(`(() => {
-          const expected = ${JSON.stringify(SOURCES[id].url)};
+          const expected = ${JSON.stringify(providerURL(id, state.preferences))};
           const actual = new URL(location.href), target = new URL(expected);
           if (actual.origin !== target.origin || actual.pathname.replace(/\\/$/, '') !== target.pathname)
             return { error: 'Sign-in or verification is required.' };
@@ -346,8 +351,13 @@ async function check(id) {
   busy.add(id);
   publish();
   try {
+    const url = providerURL(id, state.preferences);
+    if (!url)
+      throw new Error(
+        "Set your Fly.io organization slug in its card before connecting.",
+      );
     const win = providerWindow(id, false);
-    await navigate(win, SOURCES[id].url);
+    await navigate(win, url);
     const result = await readBalance(win, id);
     const observedAt = new Date().toISOString();
     record(id, {
@@ -356,6 +366,7 @@ async function check(id) {
       observedAt,
       unit: SOURCES[id].unit,
       scope: SOURCES[id].scope,
+      ...(id === "fly" ? { account: state.preferences.flyOrganization } : {}),
       status: "ok",
       error: null,
     });
@@ -396,8 +407,8 @@ function showDashboard() {
     return;
   }
   dashboard = new BrowserWindow({
-    width: 1060,
-    height: 820,
+    width: 1180,
+    height: 920,
     minWidth: 820,
     minHeight: 700,
     backgroundColor: "#f7f8f5",

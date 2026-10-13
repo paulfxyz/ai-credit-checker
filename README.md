@@ -15,18 +15,19 @@
 
 ## A small app for a surprisingly annoying problem
 
-Your credit balance should not require a tour of billing pages. AI Credit Checker gives Perplexity organization credits and OpenRouter account dollars a quiet home on your Mac.
+Your credit balance should not require a tour of billing pages. AI Credit Checker gives Perplexity organization credits and OpenRouter, Fly.io and Runware dollar balances a quiet home on your Mac.
 
 Sign in on the real provider websites inside the app. It reads the visible available-balance labels, stores timestamped observations locally and shows the result in your menu bar. No browser extension, companion server, Stream Deck plugin or AI inference is involved.
 
-<img src="docs/screenshot-overview.png" width="100%" alt="AI Credit Checker overview with Perplexity and OpenRouter balances, a menu-bar preview and background checking controls">
+<img src="docs/screenshot-overview.png" width="100%" alt="AI Credit Checker 2×2 overview with Perplexity, OpenRouter, Fly.io and Runware balances">
 
 Screenshots and illustrations use synthetic sample data, not an account owner's real balance. The screenshots are captured from the running Electron app in the automated test environment; the menu-bar preview inside the window is a preview, not a screenshot of the native macOS menu bar.
 
 ## What you get
 
-- **Numbers beside the icon:** Both balances, Perplexity only, OpenRouter only or icon only. Change the display from the dashboard or the native menu.
-- **Exact values when you need them:** The dashboard shows the full credit count and USD amount. Compact menu-bar counts use one decimal and truncate rather than round upward.
+- **Numbers beside the icon:** All four balances, any single provider or icon only. The native dropdown always includes all four balances, even in icon-only mode.
+- **A 2×2 overview:** Configure your Fly.io organization and open or check each provider independently.
+- **Precision where it matters:** The dashboard shows the full credit count and USD to two decimal places. Runware's full observed precision stays in local history. Compact menu-bar credit counts use one decimal and truncate rather than round upward.
 - **Background checks:** Every ten minutes while the app is running and your Mac is awake. Account windows that remain visible are skipped so checks do not interrupt login.
 - **Clear freshness:** A failed or at-least-20-minute-old reading becomes `∞`, meaning unavailable, never unlimited.
 - **Local history:** Keep up to 2,000 check records, filter by provider and export JSON without cookies or passwords.
@@ -34,21 +35,25 @@ Screenshots and illustrations use synthetic sample data, not an account owner's 
 
 ## Get started
 
-1. Download **AI-Credit-Checker-2.0.0-macOS-arm64.zip** from [Releases](https://github.com/paulfxyz/ai-credit-checker/releases/latest).
+1. Download **AI-Credit-Checker-2.1.0-macOS-arm64.zip** from [Releases](https://github.com/paulfxyz/ai-credit-checker/releases/latest).
 2. Extract it and drag **AI Credit Checker.app** to Applications.
-3. Open the app, use **Open account** to sign in to each provider, then click **Check now**.
+3. Open the app. For Fly.io, save the organization slug from your billing URL first. Use **Open account** to sign in to each provider, then click **Check now**.
 4. Choose what to show beside the menu-bar icon. Close the account windows and enable automatic checks.
 
-The 2.0.0 download is an **ad-hoc-signed community build, not Developer ID signed or notarized**. macOS may require an explicit approval in Privacy & Security. Do not disable Gatekeeper or remove enterprise controls; see the [installation guide](INSTALL.md).
+The 2.1.0 download is an **ad-hoc-signed community build, not Developer ID signed or notarized**. macOS may require an explicit approval in Privacy & Security. Do not disable Gatekeeper or remove enterprise controls; see the [installation guide](INSTALL.md).
 
-## Two balances, two different units
+## Four balances, two different units
 
 | Provider | What is collected | What is not collected |
 | --- | --- | --- |
 | Perplexity | Available organization Computer credit pool from the signed-in Usage page | Personal-plan allowances, credits already used, refill amounts, or a USD estimate |
 | OpenRouter | Available account balance in USD from the signed-in Credits page | A model token count or another organization's balance |
+| Fly.io | Credit Balance in USD for the configured organization | Invoice totals, active-credit usage or the Buy Credits amount |
+| Runware | Current Balance in USD, with full precision retained in history | Monthly spend, top-up transactions or payment details |
 
-The collector targets [Perplexity organization Usage](https://www.perplexity.ai/account/org/credits-usage) and [OpenRouter Credits](https://openrouter.ai/settings/credits). Availability depends on your account role, the provider's website and successful login. An ordinary personal Perplexity account without organization-pool access is not covered by this implementation.
+The collector targets [Perplexity organization Usage](https://www.perplexity.ai/account/org/credits-usage), [OpenRouter Credits](https://openrouter.ai/settings/credits), the billing page for your configured [Fly.io organization](https://fly.io/dashboard), and [Runware Wallet](https://runware.ai/wallet). Availability depends on your account role, the provider's website and successful login. An ordinary personal Perplexity account without organization-pool access is not covered by this implementation.
+
+Version 2.1 retains the 2.0 app identity, local history and provider sessions. New Fly.io and Runware collectors are tested against synthetic page fixtures; live sign-in and extraction remain first-run acceptance checks.
 
 The current Perplexity parser recognizes the English labels **Available org credits**, **Available organization credits** and **Available organisation credits**. It deliberately refuses an ambiguous reading rather than guessing from another number on the page.
 
@@ -116,7 +121,7 @@ Built by **Paul Fleury** with AI assistance. I am an entrepreneur building usefu
 
 The code is open so it can be inspected, challenged and improved. Tests and explicit limitations matter more than claims of perfection. Treat this as a community utility, not an authoritative billing ledger.
 
-AI Credit Checker is an independent project, not affiliated with or endorsed by Perplexity, OpenRouter, Apple or Electron. Provider names identify the accounts supported by the tool; the app and menu-bar artwork is original.
+AI Credit Checker is an independent project, not affiliated with or endorsed by Perplexity, OpenRouter, Fly.io, Runware, Apple or Electron. Provider names identify the accounts supported by the tool; the app and menu-bar artwork is original.
 
 ## License
 

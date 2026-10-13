@@ -1,9 +1,14 @@
 "use strict";
 const $ = (id) => document.getElementById(id);
 let latest;
-const names = { perplexity: "Perplexity", openrouter: "OpenRouter" };
+const names = {
+  perplexity: "Perplexity",
+  openrouter: "OpenRouter",
+  fly: "Fly.io",
+  runware: "Runware",
+};
 const format = (id, value) =>
-  id === "openrouter"
+  id !== "perplexity"
     ? `$${value.toFixed(2)}`
     : new Intl.NumberFormat("en-US").format(value);
 function relative(time) {
@@ -22,7 +27,11 @@ function chart(id, history) {
   svg.replaceChildren();
   const rows = history
     .filter(
-      (r) => r.provider === id && r.status === "ok" && Number.isFinite(r.value),
+      (r) =>
+        r.provider === id &&
+        r.status === "ok" &&
+        Number.isFinite(r.value) &&
+        (id !== "fly" || r.account === latest.preferences.flyOrganization),
     )
     .slice(-24);
   const ns = "http://www.w3.org/2000/svg";
@@ -60,6 +69,9 @@ function render(state) {
   $("storage").textContent = state.storageFile;
   $("background").checked = state.background;
   $("menu-mode").value = state.preferences.menuBar;
+  if (document.activeElement !== $("fly-organization"))
+    $("fly-organization").value = state.preferences.flyOrganization || "";
+  $("fly-save").disabled = state.running.includes("fly");
   $("compact").checked = state.preferences.compact;
   $("launch-login").checked = state.preferences.launchAtLogin;
   $("menu-preview-value").textContent = state.menuTitle;
@@ -125,7 +137,7 @@ function render(state) {
   for (const item of allRows.slice(-100).reverse()) {
     const row = document.createElement("tr");
     for (const value of [
-      names[item.provider],
+      `${names[item.provider] || item.provider}${item.provider === "fly" && item.account ? " · " + item.account : ""}`,
       new Date(item.checkedAt).toLocaleString(),
       item.status === "ok" ? format(item.provider, item.value) : "∞",
       item.status === "ok" ? "Observed" : "Failed",
@@ -195,6 +207,14 @@ $("launch-login").onchange = (event) =>
     launchAtLogin: event.target.checked,
   });
 $("history-filter").onchange = () => latest && render(latest);
+$("fly-config").onsubmit = async (event) => {
+  event.preventDefault();
+  const slug = $("fly-organization").value.trim();
+  await command("preferences", {
+    ...latest.preferences,
+    flyOrganization: slug,
+  });
+};
 window.monitor.subscribe(render);
 command("state");
 setInterval(() => command("state"), 30000);

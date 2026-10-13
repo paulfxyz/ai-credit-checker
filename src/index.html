@@ -14,7 +14,7 @@
     <aside class="sidebar">
       <div class="brand">
         <img src="../assets/app.png" width="46" height="46" alt="" />
-        <div>AI Credit<br />Checker<span id="version">2.0</span></div>
+        <div>AI Credit<br />Checker<span id="version">2.1</span></div>
       </div>
       <div class="nav-label">YOUR WORKSPACE</div>
       <nav aria-label="Main navigation">
@@ -37,16 +37,16 @@
     <div class="workspace">
       <div class="topline">
         <span>YOUR AI, ACCOUNTED FOR.</span
-        ><span class="badge">macOS · 2.0</span>
+        ><span class="badge">macOS · 2.1</span>
       </div>
       <main>
         <section id="view-overview" class="view">
           <header class="page-heading">
             <div>
               <h1>Balance overview<span class="title-dot">.</span></h1>
-              <p>A little clarity. Right where you need it.</p>
+              <p>Four accounts. One clear view.</p>
             </div>
-            <button id="check-all" class="primary">↻ &nbsp; Check both</button>
+            <button id="check-all" class="primary">↻ &nbsp; Check all</button>
           </header>
           <div id="migration" class="notice" hidden></div>
           <div class="balance-grid">
@@ -112,31 +112,115 @@
                 </button>
               </div>
             </article>
+            <article class="balance-card">
+              <div class="card-heading">
+                <span class="provider-mark">F</span>
+                <div>
+                  <h2>Fly.io</h2>
+                  <p>Organization credit balance</p>
+                </div>
+                <span id="fly-badge" class="state-badge">Not connected</span>
+              </div>
+              <div class="amount" id="fly-value">∞</div>
+              <div class="amount-label">USD AVAILABLE</div>
+              <svg
+                id="fly-chart"
+                class="sparkline"
+                viewBox="0 0 300 36"
+                role="img"
+                aria-label="Recent Fly.io balance observations"
+              ></svg>
+              <p class="status" id="fly-status">
+                Set your organization and open the account.
+              </p>
+              <form id="fly-config" class="account-config">
+                <label for="fly-organization">Fly.io organization slug</label>
+                <div>
+                  <input
+                    id="fly-organization"
+                    placeholder="your-organization"
+                    autocomplete="off"
+                    spellcheck="false"
+                    maxlength="63"
+                    pattern="[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?"
+                    aria-describedby="fly-hint"
+                  /><button id="fly-save" class="secondary" type="submit">
+                    Save
+                  </button>
+                </div>
+                <p id="fly-hint">
+                  The name after /dashboard/ in your billing URL.
+                </p>
+              </form>
+              <div class="card-actions">
+                <button data-open="fly" class="secondary">
+                  Open account ↗
+                </button>
+                <button data-check="fly" class="text-button">Check now</button>
+              </div>
+            </article>
+            <article class="balance-card">
+              <div class="card-heading">
+                <span class="provider-mark">R</span>
+                <div>
+                  <h2>Runware</h2>
+                  <p>API usage wallet</p>
+                </div>
+                <span id="runware-badge" class="state-badge"
+                  >Not connected</span
+                >
+              </div>
+              <div class="amount" id="runware-value">∞</div>
+              <div class="amount-label">USD AVAILABLE</div>
+              <svg
+                id="runware-chart"
+                class="sparkline"
+                viewBox="0 0 300 36"
+                role="img"
+                aria-label="Recent Runware balance observations"
+              ></svg>
+              <p class="status" id="runware-status">
+                Open your wallet and sign in.
+              </p>
+              <p class="precision-note">
+                Shown to two decimals. The full observed precision stays in your
+                local history.
+              </p>
+              <div class="card-actions">
+                <button data-open="runware" class="secondary">
+                  Open account ↗
+                </button>
+                <button data-check="runware" class="text-button">
+                  Check now
+                </button>
+              </div>
+            </article>
           </div>
           <section class="menu-panel">
             <div>
               <span class="eyebrow">ALWAYS A GLANCE AWAY</span>
-              <h2>Give your credits a home<br />in the menu bar.</h2>
-              <p>Quietly visible. Without another tab.</p>
+              <h2>Four balances. One menu bar.</h2>
+              <p>Icon only? All four stay in the dropdown menu.</p>
             </div>
             <div class="menu-controls">
               <div class="menu-preview">
-                <span class="preview-desktop">Your Mac</span>
                 <div class="preview-reading">
                   <img
                     src="../assets/menuTemplate@2x.png"
                     width="18"
                     height="18"
                     alt="AI Credit Checker icon"
-                  /><span id="menu-preview-value">∞ · ∞</span>
+                  /><span id="menu-preview-value">P ∞ · O ∞ · F ∞ · R ∞</span>
                 </div>
                 <span class="preview-clock" id="preview-clock"></span>
               </div>
               <label for="menu-mode">Display next to the icon</label
               ><select id="menu-mode">
-                <option value="both">Both balances</option>
+                <option value="all">All four balances</option>
                 <option value="perplexity">Perplexity only</option>
                 <option value="openrouter">OpenRouter only</option>
+                <option value="fly">Fly.io only</option>
+                <option value="runware">Runware only</option>
                 <option value="icon">Icon only</option>
               </select>
             </div>
@@ -171,7 +255,9 @@
             ><select id="history-filter">
               <option value="all">All accounts</option>
               <option value="perplexity">Perplexity</option>
-              <option value="openrouter">OpenRouter</option></select
+              <option value="openrouter">OpenRouter</option>
+              <option value="fly">Fly.io</option>
+              <option value="runware">Runware</option></select
             ><span id="history-count"></span>
           </div>
           <div class="table-wrap">
@@ -250,7 +336,7 @@
               <p>
                 No cloud relay, telemetry, AI inference or private API guessing.
                 Website sign-ins live in isolated local browser sessions. This
-                app is independent of Perplexity and OpenRouter.
+                app is independent of all four providers.
               </p>
             </div>
           </div>

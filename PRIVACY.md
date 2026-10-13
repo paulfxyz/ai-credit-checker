@@ -4,13 +4,13 @@ AI Credit Checker stores observations, preferences and website sessions locally 
 
 ## Network activity
 
-The embedded browser connects to Perplexity, OpenRouter, their sign-in providers and the resources those websites load. Their own privacy policies and website behavior still apply. “Local only” describes this app's storage and absence of a hosted relay; it does not mean websites are accessed offline.
+The embedded browser connects to Perplexity, OpenRouter, Fly.io, Runware, their sign-in providers and the resources those websites load. Their own privacy policies and website behavior still apply. “Local only” describes this app's storage and absence of a hosted relay; it does not mean websites are accessed offline.
 
 The app does not call an AI model or use an inference API. It reads explicitly labelled available-balance content from the rendered pages.
 
 ## Storage
 
-The application's user-data directory contains `observations.json` and persistent browser session partitions. The history keeps the latest 2,000 check records. It records balances, units, scope, timestamps, extraction method and bounded error messages.
+The application's user-data directory contains `observations.json` and persistent browser session partitions. The history keeps the latest 2,000 check records. It records balances, units, scope, timestamps, extraction method and bounded error messages. Fly.io's organization slug is stored in preferences and attached to its new observations; Runware observations retain their full parsed precision.
 
 Browser sessions are sensitive. This document does not promise encryption for every file in the app directory. macOS and Chromium manage session storage; use your normal device account and disk protections.
 

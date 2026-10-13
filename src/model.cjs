@@ -1,9 +1,11 @@
 "use strict";
 const STALE_MS = 20 * 60 * 1000;
+const { SOURCES, organizationSlug } = require("./providers.cjs");
 const DEFAULT_PREFERENCES = {
-  menuBar: "both",
+  menuBar: "all",
   compact: true,
   launchAtLogin: false,
+  flyOrganization: "",
 };
 function reading(item, now = Date.now()) {
   const time = Date.parse(item?.observedAt);
@@ -28,33 +30,35 @@ function compact(value) {
 }
 function display(id, item, short = false, now = Date.now()) {
   if (!reading(item, now)) return "∞";
-  return id === "openrouter"
+  return id !== "perplexity"
     ? `$${item.value.toFixed(2)}`
     : short
       ? compact(item.value)
       : new Intl.NumberFormat("en-US").format(item.value);
 }
 function menuTitle(state, now = Date.now()) {
-  const prefs = { ...DEFAULT_PREFERENCES, ...state.preferences };
+  const prefs = normalizePreferences(state.preferences);
   const ids =
     prefs.menuBar === "icon"
       ? []
-      : prefs.menuBar === "both"
-        ? ["perplexity", "openrouter"]
+      : prefs.menuBar === "all"
+        ? Object.keys(SOURCES)
         : [prefs.menuBar];
   return ids
-    .map((id) => display(id, state.providers[id], prefs.compact, now))
+    .map(
+      (id) =>
+        `${ids.length > 1 ? SOURCES[id].short + " " : ""}${display(id, state.providers[id], prefs.compact, now)}`,
+    )
     .join(" · ");
 }
 function normalizePreferences(input) {
   return {
-    menuBar: ["both", "perplexity", "openrouter", "icon"].includes(
-      input?.menuBar,
-    )
+    menuBar: ["all", ...Object.keys(SOURCES), "icon"].includes(input?.menuBar)
       ? input.menuBar
-      : "both",
+      : "all",
     compact: input?.compact !== false,
     launchAtLogin: input?.launchAtLogin === true,
+    flyOrganization: organizationSlug(input?.flyOrganization),
   };
 }
 function importObservations(old) {
@@ -62,7 +66,7 @@ function importObservations(old) {
     throw new Error("Unsupported history format");
   function clean(row, id, imported = false) {
     if (
-      !["perplexity", "openrouter"].includes(id) ||
+      !Object.hasOwn(SOURCES, id) ||
       typeof row?.value !== "number" ||
       !Number.isFinite(row.value) ||
       row.value < 0 ||
@@ -72,8 +76,8 @@ function importObservations(old) {
       return null;
     return {
       value: row.value,
-      unit: id === "perplexity" ? "credits" : "USD",
-      scope: id === "perplexity" ? "organization" : "account",
+      unit: SOURCES[id].unit,
+      scope: SOURCES[id].scope,
       observedAt: row.observedAt,
       checkedAt: row.checkedAt || row.observedAt,
       status: imported ? "imported" : row.status === "ok" ? "ok" : "error",
@@ -82,7 +86,7 @@ function importObservations(old) {
     };
   }
   const providers = {};
-  for (const id of ["perplexity", "openrouter"]) {
+  for (const id of Object.keys(SOURCES)) {
     const row = clean(old.providers[id], id, true);
     if (row) providers[id] = row;
   }

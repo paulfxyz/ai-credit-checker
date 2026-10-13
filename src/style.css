@@ -652,3 +652,90 @@ code {
 ) {
   font-size: 12px;
 }
+
+/* Four-account overview: retain the visual identity while keeping a clear 2×2 grid. */
+.balance-card {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px 15px;
+}
+.balance-card .amount {
+  font-size: 42px;
+  margin-top: 15px;
+}
+.balance-card .amount-label {
+  margin-top: 7px;
+}
+.balance-card .sparkline {
+  height: 14px;
+  margin-top: 9px;
+}
+.balance-card .status {
+  margin: 7px 0 12px;
+}
+.balance-card .card-actions {
+  margin-top: auto;
+  padding-top: 12px;
+}
+.account-config {
+  margin: 0 0 13px;
+}
+.account-config label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 6px;
+  color: var(--muted);
+}
+.account-config > div {
+  display: flex;
+  gap: 8px;
+}
+.account-config input {
+  min-width: 0;
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+}
+.account-config p,
+.precision-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 6px 0 0;
+  line-height: 1.5;
+}
+.precision-note {
+  margin-bottom: 18px;
+}
+.menu-panel {
+  grid-template-columns: 0.8fr 1.4fr;
+  padding: 18px 20px;
+  gap: 15px;
+}
+.menu-panel h2 {
+  font-size: 18px;
+}
+.menu-preview {
+  justify-content: flex-end;
+  overflow: auto;
+}
+.preview-reading {
+  font-size: 12px;
+}
+.preview-clock {
+  margin-left: auto;
+}
+@media (max-width: 1020px) {
+  .menu-panel {
+    grid-template-columns: 1fr;
+  }
+  .menu-panel h2 {
+    margin: 5px 0;
+  }
+  .menu-preview {
+    justify-content: flex-start;
+  }
+}
