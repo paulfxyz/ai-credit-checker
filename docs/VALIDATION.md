@@ -1,5 +1,13 @@
 # Release validation
 
+## Version 2.1.2
+
+The double-scrollbar regression was reproduced before editing: the Overview document overflowed the viewport by 227 pixels while the inner content pane already had its own scrollbar. The fix constrains the document shell and keeps `.workspace` as the vertical scroll container.
+
+The Electron suite now checks Overview, Activity and Preferences at 1180×920 and 820×700 content sizes. It verifies no outer-document overflow, no horizontal content overflow, a viewport-height content pane and access to its bottom. Refreshed screenshots use the same synthetic balances and account names as before.
+
+The updater fixture's next release version is derived from the package version, avoiding a false “up to date” result when the app version increments. The existing collector, counter, cadence, persistence and updater tests remain in place.
+
 ## Version 2.1.1
 
 The original user confirmed all four live collectors working in 2.1.0. This patch does not change their extraction logic.

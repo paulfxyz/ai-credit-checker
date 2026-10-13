@@ -1,43 +1,72 @@
 # Changelog
 
-## 2.1.1 · 2026-10-13
+User-facing changes by release, newest first. Dates use UTC publication dates; validation notes describe the evidence available for that release.
 
-- Independently select any combination of menu-bar counters with checkboxes, plus All and None shortcuts.
-- Equivalent multi-selection controls in the native menu; all four dropdown balances stay available.
-- Choose 10, 30 or 60-minute balance checks, with saved cadence and matching freshness thresholds.
-- Preserve previous display choices, sessions, history and provider configuration.
-- Add automatic GitHub stable-release checks, manual checking and confirmed Download & restart.
-- Verify GitHub asset SHA-256, bundle identity/version, architecture and code-signature integrity before replacement.
-- Unprivileged local installer retains the previous app and attempts rollback on replacement/open-command failure.
-- Extend tests for all 16 selections, native menu callbacks, persistence, updater metadata and corrupt downloads; add a native macOS installer fixture test.
+## 2.1.2 · 2026-10-13
 
-All four providers in 2.1.0 were confirmed working by the original user. Updater behavior on the user's Mac remains a separate acceptance check.
+### Fixed
 
-## 2.1.0 · 2026-10-13
+- **Duplicate scrollbars:** Constrained the outer app window and made the content pane the single vertical scroll container, without cutting off bottom controls.
+- **Screenshots:** Regenerated Overview, Activity, Preferences and counter controls from the corrected app.
 
-- Add Fly.io organization Credit Balance and Runware Current Balance collectors.
-- Four-provider 2×2 dashboard, with configurable Fly.io organization.
-- All four counters in the menu-bar title and native dropdown, including icon-only mode.
-- Runware displays two decimals while preserving full observed precision in local history.
-- Changing Fly.io organization invalidates the old current balance and retains account-labelled history.
-- Preserve existing 2.0 sessions, history and app identity; migrate “Both balances” to “All four balances.”
-- Nine unit tests and four-provider Electron fixture coverage, updated screenshots and documentation.
+### Documentation and tests
 
-Fly.io and Runware live sign-in/extraction still require first-run acceptance on the target Mac.
+- **README:** Moved installation and upgrade guidance ahead of features; separated balance polling from GitHub update checks and clarified privacy, signing and recovery limits.
+- **Changelog:** Grouped historical changes by type and distinguished release-time test limitations from later user confirmation.
+- **Regression coverage:** Checked all three views at default and minimum window sizes for document overflow, horizontal overflow and access to the bottom of the content pane.
+- **Updater fixtures:** Derived the next test version from the package version so a version bump cannot make the simulated update equal to the installed build.
+
+No collector, counter-selection, polling or updater behavior changed. Existing accounts, preferences and history are retained; 2.1.1 users can install this patch with the in-app updater.
+
+## [2.1.1](https://github.com/paulfxyz/ai-credit-checker/releases/tag/v2.1.1) · 2026-10-13
+
+### Added
+
+- **Counter selection:** Independent checkboxes for any combination of providers, plus All / None shortcuts in Overview and the native menu. All four dropdown balances remain available.
+- **Balance cadence:** Saved 10, 30 or 60-minute intervals. Changing the interval resets the next check without unpausing a paused schedule.
+- **GitHub updater:** Automatic stable-release checks on launch and every six hours, manual checking, and confirmed Download & restart.
+- **Update verification:** GitHub asset SHA-256, bundle identity/version, arm64 executable and signature-integrity checks. Direct architecture validation does not require Xcode on the user's Mac.
+- **Recovery:** Previous app retained; replacement/open-command failures attempt rollback without administrator privileges. No automatic post-launch crash detection.
+
+### Changed
+
+- **Freshness:** Age-based staleness follows twice the chosen balance interval: 20, 60 or 120 minutes. Failed reads become unavailable immediately.
+- **Preferences:** Existing all, individual-provider and icon-only modes migrate to the equivalent checkbox selection. Sessions and history are preserved.
+
+### Validation
+
+Thirteen unit tests, the Electron fixture suite and a native macOS signed-fixture replacement/launch test passed. All four live providers had been user-confirmed in 2.1.0; future-release installation on the user's Mac remained a separate acceptance check.
+
+## [2.1.0](https://github.com/paulfxyz/ai-credit-checker/releases/tag/v2.1.0) · 2026-10-13
+
+### Added
+
+- **Providers:** Fly.io organization Credit Balance and Runware wallet Current Balance.
+- **Overview:** Four-provider 2×2 grid with configurable Fly.io organization.
+- **Menu bar:** All four counters or one provider beside the icon; all four balances also available in icon-only dropdown mode.
+
+### Changed
+
+- **Runware precision:** Two-decimal USD display with full parsed precision retained locally.
+- **Fly.io scope:** Changing organization clears its current balance and retains account-labelled history.
+- **Upgrade path:** Preserved 2.0 sessions, history and app identity; migrated “Both balances” to “All four balances.”
+
+### Validation
+
+Nine unit tests and four-provider Electron fixture tests passed before publication. Live sign-in and extraction for the new providers were pending at release time and were subsequently confirmed working by the original user.
 
 ## 2.0.0 · 2026-10-06
 
-First standalone public release as **AI Credit Checker**.
+First standalone public release as AI Credit Checker, based on the working private POC.
 
-- Desktop-only scope; no Stream Deck or browser-extension code in the new repository.
-- Redesigned overview, account activity and preferences.
-- Original app icon and native monochrome menu-bar icon.
-- Configurable menu-bar display: both balances, either provider or icon only.
-- Compact/exact credit-count preference and optional launch at login.
-- Ten-minute background collection and refresh on wake.
-- Local observation history and JSON export.
-- Numeric history migration from Credit Monitor POC, without copying credentials.
-- Preserves the tested Perplexity UK/US/abbreviated label handling.
-- Public MIT source, documentation, synthetic screenshots and CI tests.
+### Added
 
-The working collector originated in the private POC. This new release changes app identity and UI; native installation, login-item behavior and provider sessions need release-level testing on the target Mac.
+- **Desktop app:** Perplexity organization and OpenRouter account collectors, redesigned Overview/Activity/Preferences, original icons and optional launch at login.
+- **Menu bar:** Both balances, either provider or icon only, with compact or exact credit counts.
+- **Collection:** Ten-minute background checks, wake refresh, local history and JSON export.
+- **Migration:** Numeric history import from Credit Monitor POC, without copying cookies or passwords.
+- **Open source:** MIT repository, installation/privacy/security documentation, synthetic screenshots and CI.
+
+### Compatibility
+
+The new app identity required fresh sign-in. Perplexity retained support for abbreviated, US-English and UK-English organization labels; Stream Deck and browser-extension code were not included.

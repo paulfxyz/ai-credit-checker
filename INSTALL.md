@@ -1,10 +1,10 @@
-# Install AI Credit Checker 2.1.1
+# Install AI Credit Checker 2.1.2
 
 This release is a standalone Apple Silicon Mac app. There is no extension, Stream Deck component, local server or Terminal-based installer.
 
 ## Install
 
-1. Download `AI-Credit-Checker-2.1.1-macOS-arm64.zip` from the GitHub release.
+1. Download `AI-Credit-Checker-2.1.2-macOS-arm64.zip` from the GitHub release.
 2. Extract the ZIP and move **AI Credit Checker.app** to Applications.
 3. Open it. This build is ad-hoc signed, not Developer ID signed or notarized. If macOS blocks opening, review the notice in **System Settings → Privacy & Security** and use **Open Anyway** if offered and you choose to trust the build.
 4. If macOS says the app is damaged, or an organization policy blocks it, stop and report the exact message. Do not disable Gatekeeper, remove quarantine with Terminal commands or bypass management policies.
@@ -15,9 +15,9 @@ This release is a standalone Apple Silicon Mac app. There is no extension, Strea
 
 ## Updating from 2.0 or 2.1.0
 
-Quit AI Credit Checker from its menu before replacing the app in Applications. Do not delete its Application Support directory: 2.1.1 uses the same identity, provider sessions, preferences and history. Existing all, icon-only and individual-provider choices migrate to the equivalent checkbox selection.
+Quit AI Credit Checker from its menu before replacing the app in Applications. Do not delete its Application Support directory: current 2.x builds use the same identity, provider sessions, preferences and history. Existing all, icon-only and individual-provider choices migrate to the equivalent checkbox selection.
 
-Sign in to the new Fly.io and Runware accounts once. Changing the Fly.io organization clears its current displayed balance to prevent showing one organization's balance under another; previous history is retained with its organization label.
+When upgrading from 2.0, sign in to the new Fly.io and Runware accounts once. Existing 2.1.x sessions do not need to be recreated. Changing the Fly.io organization clears its current displayed balance to prevent showing one organization's balance under another; previous history is retained with its organization label.
 
 ## Moving from Credit Monitor POC
 
@@ -51,7 +51,9 @@ Enable **Open at login** in Preferences if desired. It is off by default and use
 
 ## App updates via GitHub
 
-Install 2.1.1 manually once to get the updater. It checks the public repository's latest stable release 15 seconds after launch and every six hours while running. Disable automatic checks in Preferences if desired; manual **Check for updates** remains available there and in the native menu.
+The updater is available in **2.1.1 and later**. From 2.1.1, use **Preferences → Check for updates → Download & restart** to install 2.1.2. From an older version, install the latest ZIP manually once.
+
+The updater checks the public repository's latest stable release about 15 seconds after launch and every six hours while running. Disable automatic checks in Preferences if desired; manual **Check for updates** remains available there and in the native menu.
 
 When a newer release is available, Preferences offers **Download & restart**. Confirmation is required before downloading and quitting. The updater verifies GitHub's SHA-256 asset digest, the exact bundle identifier and version, the Apple Silicon executable, and the ad-hoc code-signature integrity. The trust source is the project's GitHub repository, not an Apple-verified developer identity.
 

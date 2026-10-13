@@ -5,6 +5,8 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 const root = path.resolve(__dirname, "..");
+const versionParts = require("../package.json").version.split(".").map(Number);
+const nextVersion = `${versionParts[0]}.${versionParts[1]}.${versionParts[2] + 1}`;
 let app;
 async function fixture(app, negative = false) {
   await app.evaluate(({ session }, negative) => {
@@ -72,6 +74,71 @@ async function checked(ui, id, previous) {
   }
   throw new Error(`Timed out waiting for ${id}`);
 }
+async function verifyScrolling(ui) {
+  const original = await app.evaluate(({ BrowserWindow }) => {
+    const window = BrowserWindow.getAllWindows().find((w) =>
+      w.webContents.getURL().startsWith("file:"),
+    );
+    return window.getBounds();
+  });
+  for (const [width, height] of [
+    [1180, 920],
+    [820, 700],
+  ]) {
+    await app.evaluate(
+      ({ BrowserWindow }, size) => {
+        BrowserWindow.getAllWindows()
+          .find((w) => w.webContents.getURL().startsWith("file:"))
+          .setContentSize(...size);
+      },
+      [width, height],
+    );
+    for (const view of ["overview", "activity", "settings"]) {
+      await ui.locator(`[data-view="${view}"]`).click();
+      const layout = await ui.evaluate(() => {
+        const workspace = document.querySelector(".workspace");
+        const root = document.scrollingElement;
+        workspace.scrollTop = workspace.scrollHeight;
+        return {
+          documentOverflow: root.scrollHeight - innerHeight,
+          horizontalOverflow: workspace.scrollWidth - workspace.clientWidth,
+          paneHeight: workspace.getBoundingClientRect().height,
+          viewportHeight: innerHeight,
+          atBottom:
+            Math.abs(
+              workspace.scrollHeight -
+                workspace.clientHeight -
+                workspace.scrollTop,
+            ) <= 1,
+          rootOverflowY: getComputedStyle(document.documentElement).overflowY,
+        };
+      });
+      assert.ok(
+        layout.documentOverflow <= 1,
+        `${view} ${width}: outer document overflows ${JSON.stringify(layout)}`,
+      );
+      assert.ok(
+        layout.horizontalOverflow <= 1,
+        `${view} ${width}: horizontal overflow`,
+      );
+      assert.ok(Math.abs(layout.paneHeight - layout.viewportHeight) <= 1);
+      assert.equal(
+        layout.atBottom,
+        true,
+        `${view}: bottom content is unreachable`,
+      );
+    }
+  }
+  await app.evaluate(({ BrowserWindow }, bounds) => {
+    BrowserWindow.getAllWindows()
+      .find((w) => w.webContents.getURL().startsWith("file:"))
+      .setBounds(bounds);
+  }, original);
+  await ui.locator('[data-view="overview"]').click();
+  console.log(
+    "PASS single-scroll layout: all three views at default and minimum window sizes; bottom controls reachable",
+  );
+}
 (async () => {
   const profile = await fs.mkdtemp(
     path.join(os.tmpdir(), "ai-credit-checker-test-"),
@@ -97,6 +164,7 @@ async function checked(ui, id, previous) {
     assert.equal(state.providers.fly.value, 24.5);
     assert.equal(state.providers.fly.account, "sample-org");
     assert.equal(state.providers.runware.value, 39.872);
+    await verifyScrolling(ui);
     assert.equal(await ui.locator("#runware-value").textContent(), "$39.87");
     assert.equal(await ui.locator(".balance-card").count(), 4);
     assert.equal(state.providers.perplexity.scope, "organization");
@@ -218,7 +286,7 @@ async function checked(ui, id, previous) {
     await ui.screenshot({
       path: path.join(root, "docs/screenshot-preferences.png"),
     });
-    await app.evaluate(() => {
+    await app.evaluate((_electron, nextVersion) => {
       const https = process.getBuiltinModule("https");
       const { EventEmitter } = process.getBuiltinModule("events");
       const { Readable } = process.getBuiltinModule("stream");
@@ -228,14 +296,13 @@ async function checked(ui, id, previous) {
         req.setTimeout = () => req;
         queueMicrotask(() => {
           const metadata = {
-            tag_name: "v2.1.2",
+            tag_name: `v${nextVersion}`,
             assets: [
               {
-                name: "AI-Credit-Checker-2.1.2-macOS-arm64.zip",
+                name: `AI-Credit-Checker-${nextVersion}-macOS-arm64.zip`,
                 state: "uploaded",
                 size: 120,
-                browser_download_url:
-                  "https://github.com/paulfxyz/ai-credit-checker/releases/download/v2.1.2/AI-Credit-Checker-2.1.2-macOS-arm64.zip",
+                browser_download_url: `https://github.com/paulfxyz/ai-credit-checker/releases/download/v${nextVersion}/AI-Credit-Checker-${nextVersion}-macOS-arm64.zip`,
                 digest: "sha256:" + "a".repeat(64),
               },
             ],
@@ -246,12 +313,12 @@ async function checked(ui, id, previous) {
         });
         return req;
       };
-    });
+    }, nextVersion);
     await ui.locator("#update-check").click();
     await ui.waitForFunction(
       () => !document.querySelector("#update-install").hidden,
     );
-    assert.equal((await command(ui, "state")).update.version, "2.1.2");
+    assert.equal((await command(ui, "state")).update.version, nextVersion);
     await ui.locator("#update-install").click();
     await ui.waitForFunction(() =>
       document
