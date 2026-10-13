@@ -25,22 +25,25 @@ Screenshots and illustrations use synthetic sample data, not an account owner's 
 
 ## What you get
 
-- **Numbers beside the icon:** All four balances, any single provider or icon only. The native dropdown always includes all four balances, even in icon-only mode.
+- **Choose your counters:** Independently select any combination of the four providers, or use All / None (icon only). The native dropdown always includes all four balances.
+- **Updates from GitHub:** Automatic release checks on launch and every six hours, with a confirmed Download & restart action. Downloads are SHA-256 checked against GitHub's asset digest before bundle verification and installation.
 - **A 2×2 overview:** Configure your Fly.io organization and open or check each provider independently.
 - **Precision where it matters:** The dashboard shows the full credit count and USD to two decimal places. Runware's full observed precision stays in local history. Compact menu-bar credit counts use one decimal and truncate rather than round upward.
-- **Background checks:** Every ten minutes while the app is running and your Mac is awake. Account windows that remain visible are skipped so checks do not interrupt login.
-- **Clear freshness:** A failed or at-least-20-minute-old reading becomes `∞`, meaning unavailable, never unlimited.
+- **Background checks:** Choose every 10, 30 or 60 minutes while the app is running and your Mac is awake. Account windows that remain visible are skipped so checks do not interrupt login.
+- **Clear freshness:** Failed readings become `∞`, meaning unavailable, never unlimited. Age-based staleness follows twice your selected interval (20, 60 or 120 minutes), so hourly checks do not appear stale between scheduled runs.
 - **Local history:** Keep up to 2,000 check records, filter by provider and export JSON without cookies or passwords.
 - **A proper Mac home:** Original app icon, monochrome template menu-bar icon, optional launch at login, and refresh after wake when background checks are enabled.
 
+<img src="docs/screenshot-controls.png" width="100%" alt="Independent menu-bar counter checkboxes with All and None shortcuts">
+
 ## Get started
 
-1. Download **AI-Credit-Checker-2.1.0-macOS-arm64.zip** from [Releases](https://github.com/paulfxyz/ai-credit-checker/releases/latest).
+1. Download **AI-Credit-Checker-2.1.1-macOS-arm64.zip** from [Releases](https://github.com/paulfxyz/ai-credit-checker/releases/latest).
 2. Extract it and drag **AI Credit Checker.app** to Applications.
 3. Open the app. For Fly.io, save the organization slug from your billing URL first. Use **Open account** to sign in to each provider, then click **Check now**.
 4. Choose what to show beside the menu-bar icon. Close the account windows and enable automatic checks.
 
-The 2.1.0 download is an **ad-hoc-signed community build, not Developer ID signed or notarized**. macOS may require an explicit approval in Privacy & Security. Do not disable Gatekeeper or remove enterprise controls; see the [installation guide](INSTALL.md).
+The 2.1.1 download is an **ad-hoc-signed community build, not Developer ID signed or notarized**. macOS may require an explicit approval in Privacy & Security. Do not disable Gatekeeper or remove enterprise controls; see the [installation guide](INSTALL.md).
 
 ## Four balances, two different units
 
@@ -53,7 +56,7 @@ The 2.1.0 download is an **ad-hoc-signed community build, not Developer ID signe
 
 The collector targets [Perplexity organization Usage](https://www.perplexity.ai/account/org/credits-usage), [OpenRouter Credits](https://openrouter.ai/settings/credits), the billing page for your configured [Fly.io organization](https://fly.io/dashboard), and [Runware Wallet](https://runware.ai/wallet). Availability depends on your account role, the provider's website and successful login. An ordinary personal Perplexity account without organization-pool access is not covered by this implementation.
 
-Version 2.1 retains the 2.0 app identity, local history and provider sessions. New Fly.io and Runware collectors are tested against synthetic page fixtures; live sign-in and extraction remain first-run acceptance checks.
+Version 2.1 retains the 2.0 app identity, local history and provider sessions. The original user confirmed all four providers working in 2.1.0. Provider behavior may still vary across accounts.
 
 The current Perplexity parser recognizes the English labels **Available org credits**, **Available organization credits** and **Available organisation credits**. It deliberately refuses an ambiguous reading rather than guessing from another number on the page.
 
@@ -81,7 +84,7 @@ The app uses deterministic code, not an AI agent, to check and display balances.
 - **Login support varies.** Some SSO or verification flows may reject embedded browsers. We do not bypass those restrictions.
 - **Closing the window is not quitting.** The app stays in the menu bar. Use Quit to stop it.
 - **Sleeping is sleeping.** The app does not keep your Mac awake. On wake it attempts a refresh if background checks are enabled and the account window is not visible.
-- **No silent auto-updater.** Download a new release and replace the app. Future notarization and easier distribution are possible improvements, not current features.
+- **No surprise restarts.** Automatic update checks are enabled by default and can be disabled in Preferences. Installation always requires confirmation. The local updater uses public GitHub Releases, validates the archive digest and app bundle, retains the previous app, and never requests administrator privileges or bypasses macOS security. This is not Electron's Squirrel updater, Developer ID signing or notarization.
 - **Apple Silicon release.** This release provides an arm64 binary. Intel binaries are not supplied or tested.
 
 ## From the original proof of concept

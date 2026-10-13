@@ -1,5 +1,15 @@
 # Release validation
 
+## Version 2.1.1
+
+The original user confirmed all four live collectors working in 2.1.0. This patch does not change their extraction logic.
+
+Thirteen unit tests cover all 16 menu-counter combinations, legacy preference migration, ordering/deduplication, 10/30/60-minute interval validation and cadence-aware freshness, stable-release version comparison, fixed GitHub asset provenance, SHA-256 metadata and corrupt-download rejection. The real Electron fixture suite exercises checkbox selection, All/None, native menu callbacks, dropdown contents and persistence of a two-provider selection and hourly cadence, plus schedule resets, the updater's available-release UI and development-build install guard.
+
+The macOS release workflow runs `tests/updater-mac.cjs`: it compiles a harmless arm64 fixture app, ad-hoc signs it, rejects a mismatched version, stages a valid ZIP and exercises the unprivileged replacement helper, launch and backup retention. This is separate from an actual future-release update on the user's Mac, which remains a live acceptance check.
+
+Update checks use public GitHub metadata and a mandatory asset digest. Ad-hoc signature verification checks integrity, not an Apple-verified developer identity. The helper attempts rollback on file/open-command failure, not a later app crash. No privilege escalation or macOS security changes are made.
+
 ## Version 2.1.0
 
 Nine unit tests pass, covering all four parsers, strict scope/URL matching, Fly.io slug configuration, precision, zero balances, ambiguity rejection, preferences and history migration. Runware fixtures include nested small fractional digits; Fly.io fixtures include unrelated invoice and purchase amounts.

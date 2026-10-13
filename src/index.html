@@ -214,15 +214,35 @@
                 </div>
                 <span class="preview-clock" id="preview-clock"></span>
               </div>
-              <label for="menu-mode">Display next to the icon</label
-              ><select id="menu-mode">
-                <option value="all">All four balances</option>
-                <option value="perplexity">Perplexity only</option>
-                <option value="openrouter">OpenRouter only</option>
-                <option value="fly">Fly.io only</option>
-                <option value="runware">Runware only</option>
-                <option value="icon">Icon only</option>
-              </select>
+              <fieldset class="counter-selection">
+                <legend>Display next to the icon</legend>
+                <div class="counter-options">
+                  <label
+                    ><input type="checkbox" data-counter="perplexity" />
+                    Perplexity</label
+                  >
+                  <label
+                    ><input type="checkbox" data-counter="openrouter" />
+                    OpenRouter</label
+                  >
+                  <label
+                    ><input type="checkbox" data-counter="fly" /> Fly.io</label
+                  >
+                  <label
+                    ><input type="checkbox" data-counter="runware" />
+                    Runware</label
+                  >
+                </div>
+                <div class="counter-shortcuts">
+                  <button id="counters-all" class="secondary" type="button">
+                    All
+                  </button>
+                  <button id="counters-none" class="secondary" type="button">
+                    None (icon only)
+                  </button>
+                  <span id="counter-summary" aria-live="polite"></span>
+                </div>
+              </fieldset>
             </div>
           </section>
           <section class="automation-bar">
@@ -230,12 +250,24 @@
               <h3>Let it check for you</h3>
               <p id="schedule-status">Automatic checks are paused.</p>
             </div>
-            <label class="switch"
-              ><input id="background" type="checkbox" /><span
-                class="switch-track"
-              ></span
-              ><span class="sr-only">Check every ten minutes</span></label
-            >
+            <div class="schedule-controls">
+              <label for="check-interval" class="sr-only"
+                >Balance check interval</label
+              >
+              <select id="check-interval">
+                <option value="10">Every 10 minutes</option>
+                <option value="30">Every 30 minutes</option>
+                <option value="60">Every 60 minutes</option>
+              </select>
+              <label class="switch"
+                ><input id="background" type="checkbox" /><span
+                  class="switch-track"
+                ></span
+                ><span class="sr-only"
+                  >Enable automatic balance checks</span
+                ></label
+              >
+            </div>
           </section>
           <p class="footnote">
             ∞ means unavailable or stale, never unlimited. Credit units and USD
@@ -319,11 +351,11 @@
             </div>
             <div class="setting-row">
               <div>
-                <h3>Ten-minute checks</h3>
+                <h3>Automatic balance checks</h3>
                 <p>
-                  Enable on Overview or in the menu-bar menu. Close account
-                  windows after sign-in; visible windows are skipped to avoid
-                  interrupting you.
+                  Choose 10, 30 or 60 minutes on Overview or in the menu-bar
+                  menu. Close account windows after sign-in; visible windows are
+                  skipped to avoid interrupting you.
                 </p>
               </div>
               <span class="badge">Local only</span>
@@ -340,6 +372,43 @@
               </p>
             </div>
           </div>
+          <section
+            class="data-location update-panel"
+            aria-labelledby="updates-heading"
+          >
+            <div class="update-heading">
+              <div>
+                <h3 id="updates-heading">App updates</h3>
+                <p>
+                  Public GitHub releases. Your account data stays on your Mac.
+                </p>
+              </div>
+              <label class="switch"
+                ><input id="auto-updates" type="checkbox" /><span
+                  class="switch-track"
+                ></span
+                ><span class="sr-only"
+                  >Automatically check for app updates</span
+                ></label
+              >
+            </div>
+            <p>
+              Check on launch and every six hours while running. Installation
+              always asks before restarting.
+            </p>
+            <p id="update-status" role="status"></p>
+            <div class="update-actions">
+              <button id="update-check" class="secondary">
+                Check for updates
+              </button>
+              <button id="update-install" class="primary" hidden>
+                Download &amp; restart
+              </button>
+              <button id="update-releases" class="text-button">
+                GitHub Releases ↗
+              </button>
+            </div>
+          </section>
           <div class="data-location">
             <h3>Local data &amp; privacy</h3>
             <code id="storage"></code

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.1.1 · 2026-10-13
+
+- Independently select any combination of menu-bar counters with checkboxes, plus All and None shortcuts.
+- Equivalent multi-selection controls in the native menu; all four dropdown balances stay available.
+- Choose 10, 30 or 60-minute balance checks, with saved cadence and matching freshness thresholds.
+- Preserve previous display choices, sessions, history and provider configuration.
+- Add automatic GitHub stable-release checks, manual checking and confirmed Download & restart.
+- Verify GitHub asset SHA-256, bundle identity/version, architecture and code-signature integrity before replacement.
+- Unprivileged local installer retains the previous app and attempts rollback on replacement/open-command failure.
+- Extend tests for all 16 selections, native menu callbacks, persistence, updater metadata and corrupt downloads; add a native macOS installer fixture test.
+
+All four providers in 2.1.0 were confirmed working by the original user. Updater behavior on the user's Mac remains a separate acceptance check.
+
 ## 2.1.0 · 2026-10-13
 
 - Add Fly.io organization Credit Balance and Runware Current Balance collectors.

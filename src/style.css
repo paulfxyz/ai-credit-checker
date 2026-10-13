@@ -728,6 +728,79 @@ code {
 .preview-clock {
   margin-left: auto;
 }
+.counter-selection {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.counter-selection legend {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.counter-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.counter-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  background: var(--bg);
+}
+.counter-options input {
+  accent-color: var(--accent, #216c51);
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+.counter-options label:has(input:checked) {
+  border-color: #216c51;
+}
+.counter-shortcuts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+#counter-summary {
+  font-size: 12px;
+  color: var(--muted);
+}
+.update-panel {
+  margin-bottom: 20px;
+}
+.schedule-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.update-panel p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 6px 0;
+}
+.update-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.update-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
 @media (max-width: 1020px) {
   .menu-panel {
     grid-template-columns: 1fr;

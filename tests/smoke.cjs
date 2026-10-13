@@ -129,6 +129,7 @@ async function checked(ui, id, previous) {
         global.lastTrayLabels = template
           .map((row) => row.label)
           .filter(Boolean);
+        global.lastTrayTemplate = template;
         return menu;
       };
     });
@@ -146,6 +147,53 @@ async function checked(ui, id, previous) {
         `Missing icon-only submenu counter: ${label}`,
       );
     await command(ui, "preferences", { menuBar: "all", compact: true });
+    await ui.locator("#counters-none").click();
+    await ui.waitForFunction(
+      () =>
+        document.querySelector("#counter-summary").textContent === "Icon only",
+    );
+    await ui.locator('[data-counter="perplexity"]').check();
+    await ui.waitForFunction(
+      () =>
+        document.querySelector("#counter-summary").textContent ===
+        "1 of 4 selected",
+    );
+    await ui.locator('[data-counter="runware"]').check();
+    await ui.waitForFunction(
+      () =>
+        document.querySelector("#counter-summary").textContent ===
+        "2 of 4 selected",
+    );
+    assert.equal((await command(ui, "state")).menuTitle, "P 12.4K · R $39.87");
+    await app.evaluate(() => {
+      const rows = global.lastTrayTemplate.find(
+        (row) => row.label === "Menu bar display",
+      ).submenu;
+      rows.find((row) => row.label === "OpenRouter").click({ checked: true });
+    });
+    assert.deepEqual((await command(ui, "state")).preferences.menuBar, [
+      "perplexity",
+      "openrouter",
+      "runware",
+    ]);
+    await ui.locator("#counters-all").click();
+    await ui.waitForFunction(
+      () =>
+        document.querySelector("#counter-summary").textContent ===
+        "4 of 4 selected",
+    );
+    await ui.locator("#check-interval").selectOption("60");
+    await ui.waitForFunction(() =>
+      document
+        .querySelector("#schedule-status")
+        .textContent.includes("60 minutes"),
+    );
+    assert.equal((await command(ui, "state")).background, false);
+    assert.equal((await command(ui, "state")).nextCheckAt, null);
+    await ui.locator(".menu-panel").screenshot({
+      path: path.join(root, "docs/screenshot-controls.png"),
+    });
+    await ui.locator(".workspace").evaluate((el) => el.scrollTo(0, 0));
     await ui.screenshot({
       path: path.join(root, "docs/screenshot-overview.png"),
     });
@@ -154,6 +202,11 @@ async function checked(ui, id, previous) {
       path: path.join(root, "docs/screenshot-activity.png"),
     });
     await ui.locator('[data-view="settings"]').click();
+    await ui.locator("#auto-updates").uncheck();
+    assert.equal(
+      (await command(ui, "state")).preferences.autoUpdateChecks,
+      false,
+    );
     // Do not put a private machine path into a public screenshot.
     await ui
       .locator("#storage")
@@ -165,11 +218,70 @@ async function checked(ui, id, previous) {
     await ui.screenshot({
       path: path.join(root, "docs/screenshot-preferences.png"),
     });
+    await app.evaluate(() => {
+      const https = process.getBuiltinModule("https");
+      const { EventEmitter } = process.getBuiltinModule("events");
+      const { Readable } = process.getBuiltinModule("stream");
+      global.originalUpdateGet = https.get;
+      https.get = (_url, _options, callback) => {
+        const req = new EventEmitter();
+        req.setTimeout = () => req;
+        queueMicrotask(() => {
+          const metadata = {
+            tag_name: "v2.1.2",
+            assets: [
+              {
+                name: "AI-Credit-Checker-2.1.2-macOS-arm64.zip",
+                state: "uploaded",
+                size: 120,
+                browser_download_url:
+                  "https://github.com/paulfxyz/ai-credit-checker/releases/download/v2.1.2/AI-Credit-Checker-2.1.2-macOS-arm64.zip",
+                digest: "sha256:" + "a".repeat(64),
+              },
+            ],
+          };
+          const res = Readable.from([Buffer.from(JSON.stringify(metadata))]);
+          res.statusCode = 200;
+          callback(res);
+        });
+        return req;
+      };
+    });
+    await ui.locator("#update-check").click();
+    await ui.waitForFunction(
+      () => !document.querySelector("#update-install").hidden,
+    );
+    assert.equal((await command(ui, "state")).update.version, "2.1.2");
+    await ui.locator("#update-install").click();
+    await ui.waitForFunction(() =>
+      document
+        .querySelector("#update-status")
+        .textContent.includes("packaged Apple Silicon"),
+    );
+    await app.evaluate(() => {
+      process.getBuiltinModule("https").get = global.originalUpdateGet;
+    });
+    console.log(
+      "PASS updater UI: available release, install action and development-build safety guard",
+    );
     await ui.locator('[data-view="overview"]').click();
     console.log(
-      "PASS all six menu-bar modes; icon-only native menu includes four counters",
+      "PASS multi-select checkboxes, all/none, native checkbox callback and icon-only dropdown counters",
     );
+    await command(ui, "preferences", { menuBar: ["perplexity", "runware"] });
     await command(ui, "background", true);
+    for (const minutes of [10, 30, 60]) {
+      await command(ui, "preferences", { checkIntervalMinutes: minutes });
+      const schedule = await command(ui, "state");
+      assert.equal(schedule.preferences.checkIntervalMinutes, minutes);
+      assert.equal(schedule.staleAfter, minutes * 120000);
+      assert.ok(
+        Math.abs(schedule.nextCheckAt - Date.now() - minutes * 60000) < 3000,
+      );
+    }
+    console.log(
+      "PASS 10/30/60-minute schedule resets, paused state and cadence-aware freshness",
+    );
     await app.evaluate(async ({ session }) => {
       const s = session.fromPartition("persist:ai-credit-checker-perplexity");
       await s.cookies.set({
@@ -191,6 +303,9 @@ async function checked(ui, id, previous) {
     assert.equal(state.providers.perplexity.value, 12400);
     assert.equal(state.providers.runware.value, 39.872);
     assert.equal(state.preferences.flyOrganization, "sample-org");
+    assert.deepEqual(state.preferences.menuBar, ["perplexity", "runware"]);
+    assert.equal(state.preferences.autoUpdateChecks, false);
+    assert.equal(state.preferences.checkIntervalMinutes, 60);
     assert.equal(state.background, true);
     const cookies = await app.evaluate(async ({ session }) =>
       session

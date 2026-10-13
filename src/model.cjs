@@ -2,12 +2,17 @@
 const STALE_MS = 20 * 60 * 1000;
 const { SOURCES, organizationSlug } = require("./providers.cjs");
 const DEFAULT_PREFERENCES = {
-  menuBar: "all",
+  menuBar: Object.keys(SOURCES),
   compact: true,
   launchAtLogin: false,
   flyOrganization: "",
+  autoUpdateChecks: true,
+  checkIntervalMinutes: 10,
 };
-function reading(item, now = Date.now()) {
+function staleMs(preferences) {
+  return normalizePreferences(preferences).checkIntervalMinutes * 2 * 60 * 1000;
+}
+function reading(item, now = Date.now(), maxAge = STALE_MS) {
   const time = Date.parse(item?.observedAt);
   return (
     !!item &&
@@ -17,7 +22,7 @@ function reading(item, now = Date.now()) {
     item.value >= 0 &&
     Number.isFinite(time) &&
     time <= now + 120000 &&
-    now - time < STALE_MS
+    now - time < maxAge
   );
 }
 function compact(value) {
@@ -28,8 +33,8 @@ function compact(value) {
     (scale === 1000 ? "K" : "M")
   );
 }
-function display(id, item, short = false, now = Date.now()) {
-  if (!reading(item, now)) return "∞";
+function display(id, item, short = false, now = Date.now(), maxAge = STALE_MS) {
+  if (!reading(item, now, maxAge)) return "∞";
   return id !== "perplexity"
     ? `$${item.value.toFixed(2)}`
     : short
@@ -38,27 +43,32 @@ function display(id, item, short = false, now = Date.now()) {
 }
 function menuTitle(state, now = Date.now()) {
   const prefs = normalizePreferences(state.preferences);
-  const ids =
-    prefs.menuBar === "icon"
-      ? []
-      : prefs.menuBar === "all"
-        ? Object.keys(SOURCES)
-        : [prefs.menuBar];
+  const ids = prefs.menuBar;
   return ids
     .map(
       (id) =>
-        `${ids.length > 1 ? SOURCES[id].short + " " : ""}${display(id, state.providers[id], prefs.compact, now)}`,
+        `${ids.length > 1 ? SOURCES[id].short + " " : ""}${display(id, state.providers[id], prefs.compact, now, staleMs(prefs))}`,
     )
     .join(" · ");
 }
 function normalizePreferences(input) {
+  const ids = Object.keys(SOURCES);
+  const selected = Array.isArray(input?.menuBar)
+    ? ids.filter((id) => input.menuBar.includes(id))
+    : input?.menuBar === "icon"
+      ? []
+      : ids.includes(input?.menuBar)
+        ? [input.menuBar]
+        : ids;
   return {
-    menuBar: ["all", ...Object.keys(SOURCES), "icon"].includes(input?.menuBar)
-      ? input.menuBar
-      : "all",
+    menuBar: selected,
     compact: input?.compact !== false,
     launchAtLogin: input?.launchAtLogin === true,
     flyOrganization: organizationSlug(input?.flyOrganization),
+    autoUpdateChecks: input?.autoUpdateChecks !== false,
+    checkIntervalMinutes: [10, 30, 60].includes(input?.checkIntervalMinutes)
+      ? input.checkIntervalMinutes
+      : 10,
   };
 }
 function importObservations(old) {
@@ -98,6 +108,7 @@ function importObservations(old) {
 }
 module.exports = {
   STALE_MS,
+  staleMs,
   DEFAULT_PREFERENCES,
   reading,
   compact,

@@ -10,6 +10,7 @@ const {
   importObservations,
   normalizePreferences,
   display,
+  staleMs,
 } = require("../src/model.cjs");
 const { providerURL, matchesPage } = require("../src/providers.cjs");
 const now = Date.now();
@@ -59,16 +60,23 @@ test("preferences are allowlisted, not arbitrary IPC settings", () => {
       token: "secret",
     }),
     {
-      menuBar: "all",
+      menuBar: ["perplexity", "openrouter", "fly", "runware"],
       compact: false,
       launchAtLogin: false,
       flyOrganization: "",
+      autoUpdateChecks: true,
+      checkIntervalMinutes: 10,
     },
   );
 });
 test("v2 preferences migrate; Fly URL is exact, configurable and constrained", () => {
-  assert.equal(normalizePreferences({ menuBar: "both" }).menuBar, "all");
-  assert.equal(normalizePreferences({ menuBar: "icon" }).menuBar, "icon");
+  assert.deepEqual(normalizePreferences({ menuBar: "both" }).menuBar, [
+    "perplexity",
+    "openrouter",
+    "fly",
+    "runware",
+  ]);
+  assert.deepEqual(normalizePreferences({ menuBar: "icon" }).menuBar, []);
   const prefs = normalizePreferences({ flyOrganization: " sample-org " });
   assert.equal(
     providerURL("fly", prefs),
@@ -122,6 +130,58 @@ test("new provider formatting keeps stored precision and supports all modes", ()
     menuTitle({ providers: {}, preferences: { menuBar: "all" } }),
     "P ∞ · O ∞ · F ∞ · R ∞",
   );
+});
+test("all 16 counter combinations, migration, deduplication and stable ordering", () => {
+  const ids = ["perplexity", "openrouter", "fly", "runware"];
+  const prefixes = ["P", "O", "F", "R"];
+  for (let mask = 0; mask < 16; mask++) {
+    const selected = ids.filter((_, i) => mask & (1 << i));
+    const prefs = normalizePreferences({ menuBar: selected });
+    assert.deepEqual(prefs.menuBar, selected);
+    assert.equal(
+      menuTitle({ providers: {}, preferences: prefs }),
+      selected
+        .map((id) =>
+          selected.length === 1 ? "∞" : `${prefixes[ids.indexOf(id)]} ∞`,
+        )
+        .join(" · "),
+    );
+  }
+  assert.deepEqual(
+    normalizePreferences({ menuBar: ["runware", "fly", "fly", "bogus"] })
+      .menuBar,
+    ["fly", "runware"],
+  );
+  for (const id of ids)
+    assert.deepEqual(normalizePreferences({ menuBar: id }).menuBar, [id]);
+  assert.deepEqual(normalizePreferences({ menuBar: "all" }).menuBar, ids);
+});
+test("balance cadence is allowlisted and stale thresholds follow twice the selected interval", () => {
+  assert.equal(
+    normalizePreferences({ checkIntervalMinutes: 5 }).checkIntervalMinutes,
+    10,
+  );
+  for (const minutes of [10, 30, 60]) {
+    const preferences = {
+      checkIntervalMinutes: minutes,
+      menuBar: ["openrouter"],
+    };
+    assert.equal(staleMs(preferences), minutes * 120000);
+    assert.equal(
+      menuTitle(
+        { preferences, providers: { openrouter: ok(1) } },
+        now + minutes * 60000,
+      ),
+      "$1.00",
+    );
+    assert.equal(
+      menuTitle(
+        { preferences, providers: { openrouter: ok(1) } },
+        now + minutes * 120000,
+      ),
+      "∞",
+    );
+  }
 });
 test("migration preserves numeric history, not cookies or connected status", () => {
   const old = {

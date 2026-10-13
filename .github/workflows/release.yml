@@ -14,6 +14,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - name: Native updater fixture test
+        run: node tests/updater-mac.cjs
       - name: Package and verify ad-hoc signature
         run: bash scripts/package-release.sh
       - name: Publish versioned release assets

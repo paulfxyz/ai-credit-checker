@@ -68,12 +68,30 @@ function render(state) {
   $("settings-version").textContent = state.version;
   $("storage").textContent = state.storageFile;
   $("background").checked = state.background;
-  $("menu-mode").value = state.preferences.menuBar;
+  $("check-interval").value = String(state.preferences.checkIntervalMinutes);
+  document.querySelectorAll("[data-counter]").forEach((input) => {
+    input.checked = state.preferences.menuBar.includes(input.dataset.counter);
+  });
+  const count = state.preferences.menuBar.length;
+  $("counter-summary").textContent = count
+    ? `${count} of 4 selected`
+    : "Icon only";
   if (document.activeElement !== $("fly-organization"))
     $("fly-organization").value = state.preferences.flyOrganization || "";
   $("fly-save").disabled = state.running.includes("fly");
   $("compact").checked = state.preferences.compact;
   $("launch-login").checked = state.preferences.launchAtLogin;
+  $("auto-updates").checked = state.preferences.autoUpdateChecks;
+  const update = state.update;
+  $("update-status").textContent =
+    update.message +
+    (update.status === "downloading" ? ` ${update.progress}%` : "");
+  $("update-check").disabled = [
+    "checking",
+    "downloading",
+    "installing",
+  ].includes(update.status);
+  $("update-install").hidden = update.status !== "available";
   $("menu-preview-value").textContent = state.menuTitle;
   $("preview-clock").textContent = new Date().toLocaleTimeString([], {
     hour: "2-digit",
@@ -84,8 +102,8 @@ function render(state) {
     Object.values(state.providers).every((r) => r.status !== "imported");
   $("migration").textContent = state.migration || "";
   $("schedule-status").textContent = state.background
-    ? `Every 10 minutes while your Mac is awake. Next cycle ${state.nextCheckAt ? new Date(state.nextCheckAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "soon"}.`
-    : "Automatic checks are paused. Turn on to check every 10 minutes.";
+    ? `Every ${state.preferences.checkIntervalMinutes} minutes while your Mac is awake. Next cycle ${state.nextCheckAt ? new Date(state.nextCheckAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "soon"}.`
+    : `Automatic checks are paused. Turn on to check every ${state.preferences.checkIntervalMinutes} minutes.`;
   $("check-all").disabled = state.running.length > 0;
   for (const id of Object.keys(names)) {
     const item = state.providers[id],
@@ -187,15 +205,32 @@ document
   .forEach(
     (button) => (button.onclick = () => command("check", button.dataset.check)),
   );
-for (const id of ["check-all", "export", "quit", "repository", "show-data"])
+for (const id of [
+  "check-all",
+  "export",
+  "quit",
+  "repository",
+  "show-data",
+  "update-check",
+  "update-install",
+  "update-releases",
+])
   $(id).onclick = () => command(id);
 $("background").onchange = (event) =>
   command("background", event.target.checked);
-$("menu-mode").onchange = (event) =>
-  command("preferences", {
-    ...latest.preferences,
-    menuBar: event.target.value,
-  });
+$("check-interval").onchange = (event) =>
+  command("preferences", { checkIntervalMinutes: Number(event.target.value) });
+document.querySelectorAll("[data-counter]").forEach((input) => {
+  input.onchange = () =>
+    command("preferences", {
+      menuBar: [...document.querySelectorAll("[data-counter]:checked")].map(
+        (item) => item.dataset.counter,
+      ),
+    });
+});
+$("counters-all").onclick = () =>
+  command("preferences", { menuBar: Object.keys(names) });
+$("counters-none").onclick = () => command("preferences", { menuBar: [] });
 $("compact").onchange = (event) =>
   command("preferences", {
     ...latest.preferences,
@@ -206,6 +241,8 @@ $("launch-login").onchange = (event) =>
     ...latest.preferences,
     launchAtLogin: event.target.checked,
   });
+$("auto-updates").onchange = (event) =>
+  command("preferences", { autoUpdateChecks: event.target.checked });
 $("history-filter").onchange = () => latest && render(latest);
 $("fly-config").onsubmit = async (event) => {
   event.preventDefault();
@@ -216,5 +253,8 @@ $("fly-config").onsubmit = async (event) => {
   });
 };
 window.monitor.subscribe(render);
+window.monitor.onShowSettings(() =>
+  document.querySelector('[data-view="settings"]').click(),
+);
 command("state");
 setInterval(() => command("state"), 30000);

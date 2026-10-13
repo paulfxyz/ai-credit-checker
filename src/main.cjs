@@ -15,7 +15,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 const {
-  STALE_MS,
+  staleMs,
   DEFAULT_PREFERENCES,
   display,
   menuTitle,
@@ -23,12 +23,11 @@ const {
   importObservations,
 } = require("./model.cjs");
 const { SOURCES, providerURL, matchesPage } = require("./providers.cjs");
+const updater = require("./updater.cjs");
 
 // This override is for isolated automated tests. It never touches the real profile.
 if (process.env.AI_CREDIT_CHECKER_TEST_PROFILE && !app.isPackaged)
   app.setPath("userData", process.env.AI_CREDIT_CHECKER_TEST_PROFILE);
-const INTERVAL = 10 * 60 * 1000;
-const STALE = STALE_MS;
 const windows = new Map(),
   busy = new Set();
 let dashboard,
@@ -37,6 +36,16 @@ let dashboard,
   trayTimer,
   nextCheckAt = null,
   quitting = false;
+let updateTimer,
+  updateStartupTimer,
+  updateBusy = false,
+  updateRelease = null;
+let updateState = {
+  status: "idle",
+  message: "Updates come from the public GitHub repository.",
+  version: null,
+  progress: null,
+};
 let state = {
   schema: 1,
   background: false,
@@ -66,9 +75,10 @@ function snapshot() {
     storageFile: storageFile(),
     running: [...busy],
     now: Date.now(),
-    staleAfter: STALE,
+    staleAfter: staleMs(state.preferences),
     menuTitle: menuTitle(state),
     nextCheckAt,
+    update: updateState,
   };
 }
 function publish() {
@@ -86,12 +96,12 @@ function updateTray() {
       Object.keys(SOURCES)
         .map(
           (id) =>
-            `${SOURCES[id].name}: ${display(id, state.providers[id])} ${SOURCES[id].unit}`,
+            `${SOURCES[id].name}: ${display(id, state.providers[id], false, Date.now(), staleMs(state.preferences))} ${SOURCES[id].unit}`,
         )
         .join("\n"),
   );
   const balanceRows = Object.keys(SOURCES).map((id) => ({
-    label: `${SOURCES[id].name}   ${display(id, state.providers[id])}${busy.has(id) ? "  (checking)" : ""}`,
+    label: `${SOURCES[id].name}   ${display(id, state.providers[id], false, Date.now(), staleMs(state.preferences))}${busy.has(id) ? "  (checking)" : ""}`,
     submenu: [
       { label: "Open account", click: () => openAccount(id) },
       {
@@ -121,25 +131,58 @@ function updateTray() {
         click: (item) => setBackground(item.checked),
       },
       {
+        label: "Balance check interval",
+        submenu: [10, 30, 60].map((minutes) => ({
+          label: `Every ${minutes} minutes`,
+          type: "radio",
+          checked: state.preferences.checkIntervalMinutes === minutes,
+          click: () => setPreferences({ checkIntervalMinutes: minutes }),
+        })),
+      },
+      {
         label: "Menu bar display",
         submenu: [
-          ...[
-            ["all", "All four balances"],
-            ["perplexity", "Perplexity only"],
-            ["openrouter", "OpenRouter only"],
-            ["fly", "Fly.io only"],
-            ["runware", "Runware only"],
-            ["icon", "Icon only"],
-          ].map(([value, label]) => ({
-            label,
-            type: "radio",
-            checked: state.preferences.menuBar === value,
-            click: () =>
-              setPreferences({ ...state.preferences, menuBar: value }),
+          {
+            label: "All counters",
+            click: () => setPreferences({ menuBar: Object.keys(SOURCES) }),
+          },
+          {
+            label: "None (icon only)",
+            click: () => setPreferences({ menuBar: [] }),
+          },
+          { type: "separator" },
+          ...Object.keys(SOURCES).map((id) => ({
+            label: SOURCES[id].name,
+            type: "checkbox",
+            checked: state.preferences.menuBar.includes(id),
+            click: (item) =>
+              setPreferences({
+                menuBar: item.checked
+                  ? [...state.preferences.menuBar, id]
+                  : state.preferences.menuBar.filter(
+                      (selected) => selected !== id,
+                    ),
+              }),
           })),
         ],
       },
       { type: "separator" },
+      {
+        label:
+          updateState.status === "available"
+            ? `Update to ${updateState.version}…`
+            : "Check for updates…",
+        enabled: !updateBusy,
+        click: () => {
+          showDashboard();
+          const showSettings = () =>
+            dashboard?.webContents.send("show-settings");
+          if (dashboard.webContents.isLoading())
+            dashboard.webContents.once("did-finish-load", showSettings);
+          else showSettings();
+          void checkForUpdates();
+        },
+      },
       { label: "Quit AI Credit Checker", click: () => app.quit() },
     ]),
   );
@@ -166,9 +209,127 @@ function setPreferences(input) {
       openAtLogin: prefs.launchAtLogin,
       args: ["--hidden"],
     });
+  const intervalChanged =
+    prefs.checkIntervalMinutes !== state.preferences.checkIntervalMinutes;
   state.preferences = prefs;
+  if (intervalChanged) {
+    setBackground(state.background);
+    return;
+  }
   persist();
   publish();
+}
+async function checkForUpdates() {
+  if (updateBusy) return;
+  updateBusy = true;
+  updateState = {
+    ...updateState,
+    status: "checking",
+    message: "Checking GitHub Releases…",
+    progress: null,
+  };
+  publish();
+  try {
+    updateRelease = await updater.latest(app.getVersion());
+    updateState = updateRelease
+      ? {
+          status: "available",
+          version: updateRelease.version,
+          progress: null,
+          message: `Version ${updateRelease.version} is available. Download and restart when ready.`,
+        }
+      : {
+          status: "current",
+          version: null,
+          progress: null,
+          message: `You're up to date (${app.getVersion()}).`,
+        };
+  } catch (error) {
+    updateRelease = null;
+    updateState = {
+      status: "error",
+      version: null,
+      progress: null,
+      message: error.message,
+    };
+  } finally {
+    updateBusy = false;
+    publish();
+  }
+}
+async function installUpdate() {
+  if (updateBusy || !updateRelease) return;
+  if (
+    !app.isPackaged ||
+    process.platform !== "darwin" ||
+    process.arch !== "arm64"
+  ) {
+    updateState = {
+      ...updateState,
+      status: "error",
+      message:
+        "Automatic installation is available in the packaged Apple Silicon Mac app. Download the ZIP from GitHub otherwise.",
+    };
+    publish();
+    return;
+  }
+  const info = updateRelease;
+  const answer = await dialog.showMessageBox(dashboard, {
+    type: "question",
+    buttons: ["Cancel", "Download & restart"],
+    defaultId: 1,
+    cancelId: 0,
+    title: "Update AI Credit Checker",
+    message: `Install AI Credit Checker ${info.version}?`,
+    detail:
+      "Downloads from paulfxyz/ai-credit-checker on GitHub, verifies SHA-256 and bundle integrity, then replaces and restarts this app. Account sessions and history stay untouched. A backup of the previous app is retained. This community build is not notarized; macOS may ask you to approve opening it.",
+  });
+  if (answer.response !== 1 || updateBusy || updateRelease !== info) return;
+  updateBusy = true;
+  updateState = {
+    ...updateState,
+    status: "downloading",
+    message: "Downloading verified GitHub release…",
+    progress: 0,
+  };
+  publish();
+  let prepared;
+  try {
+    const dir = path.join(app.getPath("userData"), "updates");
+    let last = -1;
+    const archive = await updater.download(info, dir, (progress) => {
+      if (progress !== last) {
+        last = progress;
+        updateState.progress = progress;
+        publish();
+      }
+    });
+    updateState = {
+      ...updateState,
+      status: "installing",
+      message: "Verifying the app and preparing restart…",
+      progress: 100,
+    };
+    publish();
+    prepared = await updater.prepare(
+      archive,
+      info.version,
+      path.resolve(process.execPath, "../../.."),
+    );
+    await updater.launchInstaller(prepared, path.join(dir, "install.log"));
+    app.quit();
+  } catch (error) {
+    if (prepared)
+      await fs.promises.rm(prepared.dir, { recursive: true, force: true });
+    updateState = {
+      ...updateState,
+      status: "error",
+      message: `${error.message} The current app has not been replaced. You can install the ZIP from GitHub manually.`,
+      progress: null,
+    };
+    updateBusy = false;
+    publish();
+  }
 }
 function checkAll() {
   for (const id of Object.keys(SOURCES)) void check(id);
@@ -380,8 +541,9 @@ async function check(id) {
 }
 function setBackground(enabled) {
   state.background = !!enabled;
+  const interval = state.preferences.checkIntervalMinutes * 60 * 1000;
   clearInterval(timer);
-  nextCheckAt = state.background ? Date.now() + INTERVAL : null;
+  nextCheckAt = state.background ? Date.now() + interval : null;
   if (state.background)
     timer = setInterval(() => {
       // Don't interfere with a person completing login in a visible window.
@@ -394,9 +556,9 @@ function setBackground(enabled) {
         )
           void check(id);
       }
-      nextCheckAt = Date.now() + INTERVAL;
+      nextCheckAt = Date.now() + interval;
       publish();
-    }, INTERVAL);
+    }, interval);
   persist();
   publish();
 }
@@ -446,6 +608,12 @@ function installIPC() {
     else if (command === "check-all") checkAll();
     else if (command === "background") setBackground(id === true);
     else if (command === "preferences") setPreferences(id);
+    else if (command === "update-check") void checkForUpdates();
+    else if (command === "update-install") void installUpdate();
+    else if (command === "update-releases")
+      void shell.openExternal(
+        "https://github.com/paulfxyz/ai-credit-checker/releases/latest",
+      );
     else if (command === "repository")
       void shell.openExternal("https://github.com/paulfxyz/ai-credit-checker");
     else if (command === "show-data") shell.showItemInFolder(storageFile());
@@ -476,6 +644,8 @@ else {
     quitting = true;
     clearInterval(timer);
     clearInterval(trayTimer);
+    clearInterval(updateTimer);
+    clearTimeout(updateStartupTimer);
   });
   app.on("window-all-closed", () => {});
   app.on("activate", showDashboard);
@@ -537,6 +707,17 @@ else {
     installIPC();
     if (!process.argv.includes("--hidden")) showDashboard();
     setBackground(state.background);
+    if (app.isPackaged) {
+      updateStartupTimer = setTimeout(() => {
+        if (state.preferences.autoUpdateChecks) void checkForUpdates();
+      }, 15000);
+      updateTimer = setInterval(
+        () => {
+          if (state.preferences.autoUpdateChecks) void checkForUpdates();
+        },
+        6 * 60 * 60 * 1000,
+      );
+    }
     trayTimer = setInterval(updateTray, 30000);
     powerMonitor.on("resume", () => {
       if (state.background) {

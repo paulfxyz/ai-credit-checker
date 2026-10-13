@@ -8,11 +8,15 @@ The embedded browser connects to Perplexity, OpenRouter, Fly.io, Runware, their 
 
 The app does not call an AI model or use an inference API. It reads explicitly labelled available-balance content from the rendered pages.
 
+Starting with 2.1.1, automatic update checks connect to GitHub's public Releases API on launch and every six hours while the packaged app runs. You can disable these in Preferences. Confirmed downloads use GitHub release-asset servers; no provider cookies, balances, organization slug or account history are included in update requests. GitHub still receives normal connection metadata such as your IP address.
+
 ## Storage
 
 The application's user-data directory contains `observations.json` and persistent browser session partitions. The history keeps the latest 2,000 check records. It records balances, units, scope, timestamps, extraction method and bounded error messages. Fly.io's organization slug is stored in preferences and attached to its new observations; Runware observations retain their full parsed precision.
 
 Browser sessions are sensitive. This document does not promise encryption for every file in the app directory. macOS and Chromium manage session storage; use your normal device account and disk protections.
+
+The updates subfolder stores downloaded ZIPs and an installer log. Previous application bundles are retained in hidden update directories beside the installed app; these backups do not copy your account-data directory. Installation requires an explicit restart confirmation.
 
 Exports include observations and history, not cookies, passwords, authorization headers or full page HTML. An export can still disclose financial/account-usage information, so review it before sharing.
 
