@@ -11,6 +11,14 @@ const exec = promisify(execFile);
 const REPO = "paulfxyz/ai-credit-checker";
 const API = `https://api.github.com/repos/${REPO}/releases/latest`;
 const MAX_BYTES = 400 * 1024 * 1024;
+function isArm64(header) {
+  // These releases contain a thin arm64 Mach-O. Do not depend on Xcode's lipo.
+  return (
+    header.length >= 8 &&
+    header.readUInt32LE(0) === 0xfeedfacf &&
+    header.readUInt32LE(4) === 0x0100000c
+  );
+}
 function versionParts(value) {
   const match = /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(value);
   if (!match) return null;
@@ -189,11 +197,20 @@ async function prepare(archive, version, appPath) {
       (await read("CFBundleShortVersionString")) !== version
     )
       throw new Error("Unexpected update identity or version.");
-    await exec("/usr/bin/lipo", [
-      "-verify_arch",
-      "arm64",
+    const executable = await fs.promises.open(
       path.join(candidate, "Contents/MacOS/AI Credit Checker"),
-    ]);
+      "r",
+    );
+    try {
+      const header = Buffer.alloc(8);
+      const { bytesRead } = await executable.read(header, 0, 8, 0);
+      if (!isArm64(header.subarray(0, bytesRead)))
+        throw new Error(
+          "Update does not contain the expected arm64 executable.",
+        );
+    } finally {
+      await executable.close();
+    }
     const helper = path.join(dir, "install-update.sh");
     await fs.promises.copyFile(
       path.join(__dirname, "install-update.sh"),
@@ -229,6 +246,7 @@ function launchInstaller(prepared, logPath) {
   }
 }
 module.exports = {
+  isArm64,
   newer,
   releaseInfo,
   latest,

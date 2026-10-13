@@ -8,7 +8,7 @@ const crypto = require("node:crypto");
 const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
-const { newer, releaseInfo, download } = require("../src/updater.cjs");
+const { newer, releaseInfo, download, isArm64 } = require("../src/updater.cjs");
 const url =
   "https://github.com/paulfxyz/ai-credit-checker/releases/download/v2.1.2/AI-Credit-Checker-2.1.2-macOS-arm64.zip";
 const fixture = () => ({
@@ -26,6 +26,13 @@ const fixture = () => ({
   ],
 });
 test("updater accepts only newer stable releases from the fixed repository with a digest", () => {
+  const header = Buffer.alloc(8);
+  header.writeUInt32LE(0xfeedfacf, 0);
+  header.writeUInt32LE(0x0100000c, 4);
+  assert.equal(isArm64(header), true);
+  header.writeUInt32LE(0x01000007, 4);
+  assert.equal(isArm64(header), false);
+  assert.equal(isArm64(Buffer.from("bad")), false);
   assert.equal(newer("2.1.2", "2.1.1"), true);
   assert.equal(newer("2.1.0", "2.1.1"), false);
   assert.equal(newer("2.1.1", "2.1.1"), false);

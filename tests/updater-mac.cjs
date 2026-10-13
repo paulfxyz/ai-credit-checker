@@ -15,7 +15,11 @@ const { prepare } = require("../src/updater.cjs");
   try {
     await fs.mkdir(path.join(target, "Contents/MacOS"), { recursive: true });
     const c = path.join(root, "fixture.c");
-    await fs.writeFile(c, "int main(void) { return 0; }\n");
+    const marker = path.join(root, "launched");
+    await fs.writeFile(
+      c,
+      `#include <stdio.h>\nint main(void) { FILE *f = fopen(${JSON.stringify(marker)}, "w"); if (!f) return 1; fputs("ok", f); fclose(f); return 0; }\n`,
+    );
     execFileSync("/usr/bin/clang", [
       "-arch",
       "arm64",
@@ -50,6 +54,15 @@ const { prepare } = require("../src/updater.cjs");
       { timeout: 90000 },
     );
     await fs.stat(path.join(prepared.dir, "Previous AI Credit Checker.app"));
+    for (let i = 0; i < 40; i++) {
+      try {
+        await fs.stat(marker);
+        break;
+      } catch {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    }
+    assert.equal(await fs.readFile(marker, "utf8"), "ok");
     execFileSync("/usr/bin/codesign", [
       "--verify",
       "--deep",
