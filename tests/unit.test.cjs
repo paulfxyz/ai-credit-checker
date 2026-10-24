@@ -378,3 +378,24 @@ test("Runware billing Available balance excludes nearby monthly spend", () => {
     /Ambiguous/,
   );
 });
+
+test("Runware spend labels do not require whitespace between HTML elements", () => {
+  for (const spend of [
+    "<p><span>Spent this month</span><b>$6.72</b></p>",
+    "<p>Spent this month:<b>$6.72</b></p>",
+    "<p>Spend this month<b>$6.72</b></p>",
+  ]) {
+    assert.equal(
+      read(
+        `<section><p>Available balance</p><div>$39.87</div>${spend}</section>`,
+        "runware",
+      ).value,
+      39.87,
+    );
+    assert.throws(
+      () =>
+        read(`<section><p>Available balance</p>${spend}</section>`, "runware"),
+      /could not be identified/,
+    );
+  }
+});

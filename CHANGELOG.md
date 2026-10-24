@@ -12,7 +12,7 @@ User-facing changes by release, newest first. Dates use UTC publication dates; v
 
 ### Validation
 
-Added a synthetic regression fixture based on the user-supplied screenshot, with zero, hidden, malformed, ambiguous and nested fractional amounts. The four-provider Electron suite uses the new Runware layout. Authenticated live DOM verification was unavailable; the first updated Runware collection remains a user acceptance check. Existing sessions, preferences and history are preserved.
+All 15 unit tests and the four-provider Electron suite passed before packaging. Added synthetic regression fixtures based on the user-supplied screenshot, with zero, hidden, malformed, ambiguous and nested fractional amounts, including adjacent HTML without whitespace. The Electron suite uses the new Runware layout. Authenticated live DOM verification was unavailable; the first updated Runware collection remains a user acceptance check. Existing sessions, preferences and history are preserved.
 
 ## 2.1.2 · 2026-10-13
 

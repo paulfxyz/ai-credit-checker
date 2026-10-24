@@ -132,7 +132,7 @@
               parent = parent.parentElement
             ) {
               const spend = norm(parent.textContent).match(
-                /^(?:Spent|Spend) this month\s*:?\s+(.+)$/i,
+                /^(?:Spent|Spend) this month\s*:?\s*(\$.+)$/i,
               );
               if (spend && number(spend[1], provider) !== null) return false;
             }

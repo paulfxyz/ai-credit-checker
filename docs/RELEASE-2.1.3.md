@@ -19,6 +19,6 @@ This remains an Apple Silicon, ad-hoc-signed build, not Developer ID signed or n
 
 ## Validation
 
-The regression fixture reconstructs the new page's visible labels and layout from a user-provided screenshot using synthetic values. It tests monthly spend exclusion, zero, precision, hidden and malformed values, ambiguity and the new route. The Electron fixture suite checks all four providers and existing controls; the macOS release workflow also runs the native updater fixture.
+All 15 unit tests and the full Electron fixture suite passed before packaging. The regression fixture reconstructs the new page's visible labels and layout from a user-provided screenshot using synthetic values. It tests monthly spend exclusion (including adjacent HTML with no whitespace), zero, precision, hidden and malformed values, ambiguity and the new route. The Electron fixture suite checks all four providers and existing controls; the macOS release workflow also runs the native updater fixture.
 
 The authenticated live Runware DOM was not accessible in this Computer session. These fixtures do not establish live collection on the redesigned site; the first Runware check after installation remains a user acceptance check. No private screenshot or account data is included in the repository.
