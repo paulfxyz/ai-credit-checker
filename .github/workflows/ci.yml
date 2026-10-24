@@ -17,3 +17,4 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: xvfb-run -a npm run test:smoke
+      - run: xvfb-run -a npm run test:render

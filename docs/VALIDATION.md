@@ -1,5 +1,13 @@
 # Release validation
 
+## Version 2.1.5
+
+The user reported that Runware succeeded only while its account window was open. Closing an account window hides it. A standalone Electron probe without automation attached showed a shown-then-hidden window stops running animation frames, so a client-rendered fixture stayed on its loading state; a never-shown offscreen window rendered it. This matches the reported "Available-credit label not found" error with the window closed.
+
+Closed-window checks now use a temporary offscreen reader on the same persistent session partition, destroyed after each check; a visible window is read directly. `tests/hidden-render.cjs` runs the probe in CI and on the macOS release runner. The Electron suite renders the Runware fixture through animation frames, opens and closes its window, checks it, and asserts a single offscreen reader was created and destroyed. With the previous `main.cjs`, that assertion fails.
+
+Playwright-attached hidden pages keep rendering, which masked this bug in earlier fixture tests. Live Runware collection after closing the window remains a user acceptance check.
+
 ## Versions 2.1.3 and 2.1.4
 
 Runware now redirects the old `/wallet` URL to `/settings/billing`, as reported by the user. Their screenshot shows “Available balance” in an “Inference credits” card, with “Spent this month” nearby. The old URL guard and old-only label explain two independent incompatibilities.

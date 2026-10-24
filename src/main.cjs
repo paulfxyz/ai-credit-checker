@@ -417,6 +417,31 @@ function providerWindow(id, show) {
   }
   return win;
 }
+// A login window that was shown and then closed is only hidden. macOS/Chromium
+// stop producing frames for it, so client-rendered pages that wait for
+// requestAnimationFrame (Runware Billing) never show their balance. Closed-window
+// checks therefore use a short-lived offscreen reader on the same persistent
+// session partition: same cookies, no visible window, frames always produced.
+function readerWindow(id) {
+  const win = new BrowserWindow({
+    width: 1100,
+    height: 830,
+    show: false,
+    title: `${SOURCES[id].name} reader · AI Credit Checker`,
+    webPreferences: { ...securePreferences(id), offscreen: true },
+  });
+  win.webContents.setFrameRate(10);
+  guardRemote(win, id);
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  return win;
+}
+function collectionWindow(id) {
+  const login = windows.get(id);
+  // Keep reading the person's visible window, so checks reflect what they see.
+  if (login && !login.isDestroyed() && login.isVisible())
+    return { win: login, temporary: false };
+  return { win: readerWindow(id), temporary: true };
+}
 async function navigate(win, url) {
   // Wait for the new document, not every analytics request/image on the page.
   await new Promise((resolve, reject) => {
@@ -517,9 +542,15 @@ async function check(id) {
       throw new Error(
         "Set your Fly.io organization slug in its card before connecting.",
       );
-    const win = providerWindow(id, false);
-    await navigate(win, url);
-    const result = await readBalance(win, id);
+    const collector = collectionWindow(id);
+    let result;
+    try {
+      await navigate(collector.win, url);
+      result = await readBalance(collector.win, id);
+    } finally {
+      if (collector.temporary && !collector.win.isDestroyed())
+        collector.win.destroy();
+    }
     const observedAt = new Date().toISOString();
     record(id, {
       value: result.value,

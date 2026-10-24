@@ -20,7 +20,8 @@ async function fixture(app, negative = false) {
       }
       s.protocol.handle(
         "https",
-        () =>
+        (request) =>
+          (globalThis.requestedURLs ??= []).push(request.url) &&
           new Response(
             negative
               ? "<h1>Please sign in</h1>"
@@ -29,7 +30,7 @@ async function fixture(app, negative = false) {
                 : id === "fly"
                   ? "<main><section><h2>Account Overview</h2><div><p>Account Status</p><span>Good Standing</span></div><div><p>Credit Balance</p><span>$24.50</span></div></section><section><p>Last Invoice</p><span>$500.00</span></section></main>"
                   : id === "runware"
-                    ? "<main><section><header><h2>Inference credits</h2><p>Image, video, audio and language model requests</p><button>Configure</button><button>Add funds</button></header><div><p>Available balance</p><div><span>$39.87</span><small>2</small></div><p><span>Spent this month</span><span>$6.72</span></p></div><footer>Auto top-up <button>$25.00</button></footer></section><section><h2>Payment methods</h2></section></main>"
+                    ? '<main id="app">Loading</main><script>requestAnimationFrame(() => requestAnimationFrame(() => { document.getElementById("app").innerHTML = "<section><header><h2>Inference credits</h2><p>Image, video, audio and language model requests</p><button>Configure</button><button>Add funds</button></header><div><p>Available balance</p><div><span>$39.87</span><small>2</small></div><p><span>Spent this month</span><span>$6.72</span></p></div><footer>Auto top-up <button>$25.00</button></footer></section><section><h2>Payment methods</h2></section>"; }));</script>'
                     : '<main><section aria-label="Total available credits: $85.20"><h2>TOTAL AVAILABLE</h2><div>$85.20</div></section></main>',
             {
               headers: {
@@ -53,6 +54,31 @@ async function launch(profile) {
     () => window.monitor && document.getElementById("version").textContent,
   );
   return { a, ui };
+}
+async function requested(app) {
+  return app.evaluate(() => globalThis.requestedURLs || []);
+}
+async function waitForPage(app, host) {
+  const deadline = Date.now() + 15000;
+  while (Date.now() < deadline) {
+    const page = app.windows().find((p) => p.url().includes(host));
+    if (page) {
+      await page.waitForLoadState("domcontentloaded");
+      return page;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`No account window for ${host}`);
+}
+async function hideAccount(app, host) {
+  await app.evaluate(({ BrowserWindow }, host) => {
+    const win = BrowserWindow.getAllWindows().find((w) =>
+      w.webContents.getURL().includes(host),
+    );
+    // The app intercepts close and hides the window, like the red close button.
+    win.close();
+    if (win.isVisible()) throw new Error("Account window did not hide");
+  }, host);
 }
 async function command(ui, name, id) {
   return ui.evaluate(
@@ -164,11 +190,8 @@ async function verifyScrolling(ui) {
     assert.equal(state.providers.fly.value, 24.5);
     assert.equal(state.providers.fly.account, "sample-org");
     assert.equal(state.providers.runware.value, 39.872);
-    assert.equal(
-      app
-        .windows()
-        .some((page) => page.url() === "https://runware.ai/settings/billing"),
-      true,
+    assert.ok(
+      (await requested(app)).includes("https://runware.ai/settings/billing"),
       "Runware collector must use the new billing URL",
     );
     await verifyScrolling(ui);
@@ -179,14 +202,56 @@ async function verifyScrolling(ui) {
     console.log(
       "PASS real Electron: four providers, precise stored Runware value, two-decimal UI, 2x2 grid",
     );
-    const remote = app.windows().find((p) => p.url().includes("perplexity.ai"));
+    await command(ui, "open", "perplexity");
+    const remote = await waitForPage(app, "perplexity.ai");
     assert.equal(await remote.evaluate(() => typeof require), "undefined");
     assert.equal(
       await remote.evaluate(() => typeof window.monitor),
       "undefined",
     );
+    await hideAccount(app, "perplexity.ai");
     console.log(
       "PASS remote page has no Node require or privileged monitor bridge",
+    );
+    // Regression for 2.1.5: an account window that was opened and then closed
+    // is only hidden and stops producing animation frames. The client-rendered
+    // Runware fixture must still be read, via the offscreen collector.
+    await command(ui, "open", "runware");
+    await waitForPage(app, "runware.ai");
+    await hideAccount(app, "runware.ai");
+    await app.evaluate(({ app }) => {
+      globalThis.createdReaders = [];
+      app.on("browser-window-created", (_event, win) =>
+        globalThis.createdReaders.push({
+          win,
+          offscreen: win.webContents.isOffscreen(),
+        }),
+      );
+    });
+    const beforeHiddenCheck = state.providers.runware.checkedAt;
+    await command(ui, "check", "runware");
+    state = await checked(ui, "runware", beforeHiddenCheck);
+    assert.equal(
+      state.providers.runware.status,
+      "ok",
+      state.providers.runware.error,
+    );
+    assert.equal(state.providers.runware.value, 39.872);
+    // Playwright keeps attached hidden windows rendering, which can mask the
+    // bug here; tests/hidden-render.cjs covers rendering without automation.
+    // This asserts the routing: a closed window is read by a temporary
+    // offscreen reader, never by the hidden login window, and it is cleaned up.
+    const readers = await app.evaluate(() =>
+      globalThis.createdReaders.map(({ win, offscreen }) => ({
+        offscreen,
+        destroyed: win.isDestroyed(),
+      })),
+    );
+    assert.equal(readers.length, 1, JSON.stringify(readers));
+    assert.equal(readers[0].offscreen, true);
+    assert.equal(readers[0].destroyed, true);
+    console.log(
+      "PASS closed account window: client-rendered Runware balance read offscreen with the same session",
     );
     assert.equal(state.menuTitle, "P 12.4K · O $85.20 · F $24.50 · R $39.87");
     await command(ui, "preferences", { menuBar: "perplexity", compact: false });
@@ -410,13 +475,9 @@ async function verifyScrolling(ui) {
     state = await checked(ui, "fly");
     assert.equal(state.providers.fly.account, "another-sample-org");
     assert.ok(
-      app
-        .windows()
-        .some(
-          (page) =>
-            page.url() ===
-            "https://fly.io/dashboard/another-sample-org/billing",
-        ),
+      (await requested(app)).includes(
+        "https://fly.io/dashboard/another-sample-org/billing",
+      ),
     );
     console.log(
       "PASS Fly organization changes invalidate old balance and target exact new URL",
@@ -431,11 +492,7 @@ async function verifyScrolling(ui) {
     console.log(
       "Negative fixture result:",
       state.providers.perplexity.status,
-      await app
-        .windows()
-        .find((p) => p.url().includes("perplexity.ai"))
-        .locator("body")
-        .innerText(),
+      state.providers.perplexity.error,
     );
     assert.equal(state.providers.perplexity.status, "error");
     assert.equal(state.providers.perplexity.value, 12400);

@@ -1,10 +1,10 @@
-# Install AI Credit Checker 2.1.4
+# Install AI Credit Checker 2.1.5
 
 This release is a standalone Apple Silicon Mac app. There is no extension, Stream Deck component, local server or Terminal-based installer.
 
 ## Install
 
-1. Download `AI-Credit-Checker-2.1.4-macOS-arm64.zip` from the GitHub release.
+1. Download `AI-Credit-Checker-2.1.5-macOS-arm64.zip` from the GitHub release.
 2. Extract the ZIP and move **AI Credit Checker.app** to Applications.
 3. Open it. This build is ad-hoc signed, not Developer ID signed or notarized. If macOS blocks opening, review the notice in **System Settings → Privacy & Security** and use **Open Anyway** if offered and you choose to trust the build.
 4. If macOS says the app is damaged, or an organization policy blocks it, stop and report the exact message. Do not disable Gatekeeper, remove quarantine with Terminal commands or bypass management policies.
@@ -51,7 +51,7 @@ Enable **Open at login** in Preferences if desired. It is off by default and use
 
 ## App updates via GitHub
 
-The updater is available in **2.1.1 and later**. Use **Preferences → Check for updates → Download & restart** to install 2.1.4. From an older version, install the latest ZIP manually once.
+The updater is available in **2.1.1 and later**. Use **Preferences → Check for updates → Download & restart** to install 2.1.5. From an older version, install the latest ZIP manually once.
 
 The updater checks the public repository's latest stable release about 15 seconds after launch and every six hours while running. Disable automatic checks in Preferences if desired; manual **Check for updates** remains available there and in the native menu.
 
@@ -83,7 +83,7 @@ To remove the app, first disable Open at login and quit it, then remove it from 
 
 **Fly.io:** Save the correct organization slug before opening its account page. The parser reads “Credit Balance,” not invoice totals or remaining active-credit entries.
 
-**Runware:** Open [Billing](https://runware.ai/settings/billing) and select the intended workspace. The parser reads “Available balance” in the Inference credits card, not “Spent this month.” The old “Current Balance” label remains supported. Full observed precision is retained; the dashboard and menu intentionally display two decimals. Version 2.1.3 fixes the old `/wallet` route being rejected after Runware redirects it to Billing. Existing login sessions are retained.
+**Runware:** Open [Billing](https://runware.ai/settings/billing) and select the intended workspace. The parser reads “Available balance” in the Inference credits card, not “Spent this month.” The old “Current Balance” label remains supported. Full observed precision is retained; the dashboard and menu intentionally display two decimals. Version 2.1.3 fixes the old `/wallet` route being rejected after Runware redirects it to Billing. Version 2.1.5 fixes checks after the Runware window is closed: closed-window checks now use a temporary offscreen reader on the same saved login. Existing login sessions are retained.
 
 **Login blocked:** Follow the provider's supported sign-in flow. If embedded browsers are refused, stop; this app does not copy sessions from another browser or bypass SSO policy.
 

@@ -21,7 +21,7 @@ Sign in to each provider's real website inside the app, then choose which counte
 
 ## Install or update
 
-1. Download **AI-Credit-Checker-2.1.4-macOS-arm64.zip** from the [latest release](https://github.com/paulfxyz/ai-credit-checker/releases/latest). If you are replacing an existing installation, quit it first.
+1. Download **AI-Credit-Checker-2.1.5-macOS-arm64.zip** from the [latest release](https://github.com/paulfxyz/ai-credit-checker/releases/latest). If you are replacing an existing installation, quit it first.
 2. Extract the ZIP and move **AI Credit Checker.app** to Applications.
 3. For Fly.io, save the organization slug from your billing URL. Use **Open account** to sign in to each provider you want to track, then **Check now** to verify its balance.
 4. Select your menu-bar counters and a **10, 30 or 60-minute** balance-check interval. Close the provider windows and enable automatic checks.

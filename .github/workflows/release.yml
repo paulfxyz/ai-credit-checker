@@ -27,6 +27,8 @@ jobs:
           fi
       - run: npm ci
       - run: npm test
+      - name: Hidden-window rendering probe
+        run: npm run test:render
       - name: Native updater fixture test
         run: node tests/updater-mac.cjs
       - name: Package and verify ad-hoc signature

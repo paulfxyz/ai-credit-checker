@@ -2,6 +2,18 @@
 
 User-facing changes by release, newest first. Dates use UTC publication dates; validation notes describe the evidence available for that release.
 
+## 2.1.5 · 2026-10-24
+
+### Fixed
+
+- **Checks after closing an account window:** Runware worked only while its window stayed open. A window that has been shown and then closed is hidden, and Chromium stops rendering it; Runware's Billing page renders its balance client-side, so the hidden page never showed it. Checks for a closed window now use a temporary offscreen reader on the same saved session, then destroy it. A visible window is still read directly. Applies to all four providers.
+
+### Validation
+
+- **Root cause reproduced:** Without automation attached, a shown-then-hidden Electron window did not render a client-side fixture; an offscreen reader did. `tests/hidden-render.cjs` runs this probe in CI and on the macOS release runner.
+- **Regression:** The Electron suite opens and closes the Runware window, then checks a client-rendered Billing fixture and asserts a temporary offscreen reader was used and cleaned up. The old code fails this test.
+- Playwright keeps attached hidden windows rendering, which is why earlier fixture tests passed. The live check after closing the Runware window remains a user acceptance check.
+
 ## 2.1.4 · 2026-10-24
 
 ### Fixed
