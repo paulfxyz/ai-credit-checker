@@ -21,7 +21,7 @@ Sign in to each provider's real website inside the app, then choose which counte
 
 ## Install or update
 
-1. Download **AI-Credit-Checker-2.1.2-macOS-arm64.zip** from the [latest release](https://github.com/paulfxyz/ai-credit-checker/releases/latest). If you are replacing an existing installation, quit it first.
+1. Download **AI-Credit-Checker-2.1.3-macOS-arm64.zip** from the [latest release](https://github.com/paulfxyz/ai-credit-checker/releases/latest). If you are replacing an existing installation, quit it first.
 2. Extract the ZIP and move **AI Credit Checker.app** to Applications.
 3. For Fly.io, save the organization slug from your billing URL. Use **Open account** to sign in to each provider you want to track, then **Check now** to verify its balance.
 4. Select your menu-bar counters and a **10, 30 or 60-minute** balance-check interval. Close the provider windows and enable automatic checks.
@@ -53,9 +53,9 @@ Screenshots use synthetic data captured from the running Electron app, not real 
 | Perplexity | Available organization Computer credit pool from the signed-in Usage page | Personal-plan allowances, credits already used, refill amounts, or a USD estimate |
 | OpenRouter | Available account balance in USD from the signed-in Credits page | A model token count or another organization's balance |
 | Fly.io | Credit Balance in USD for the configured organization | Invoice totals, active-credit usage or the Buy Credits amount |
-| Runware | Current Balance in USD, with full precision retained in history | Monthly spend, top-up transactions or payment details |
+| Runware | Inference credits Available balance in USD, with full precision retained in history | Monthly spend, top-up transactions or payment details |
 
-The collector targets [Perplexity organization Usage](https://www.perplexity.ai/account/org/credits-usage), [OpenRouter Credits](https://openrouter.ai/settings/credits), the billing page for your configured [Fly.io organization](https://fly.io/dashboard), and [Runware Wallet](https://runware.ai/wallet). Availability depends on your account role, the provider's website and successful login. An ordinary personal Perplexity account without organization-pool access is not covered by this implementation.
+The collector targets [Perplexity organization Usage](https://www.perplexity.ai/account/org/credits-usage), [OpenRouter Credits](https://openrouter.ai/settings/credits), the billing page for your configured [Fly.io organization](https://fly.io/dashboard), and [Runware Billing](https://runware.ai/settings/billing). Availability depends on your account role, the provider's website and successful login. An ordinary personal Perplexity account without organization-pool access is not covered by this implementation.
 
 The current Perplexity parser recognizes the English labels **Available org credits**, **Available organization credits** and **Available organisation credits**. It deliberately refuses an ambiguous reading rather than guessing from another number on the page.
 

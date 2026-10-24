@@ -2,6 +2,18 @@
 
 User-facing changes by release, newest first. Dates use UTC publication dates; validation notes describe the evidence available for that release.
 
+## 2.1.3 · 2026-10-24
+
+### Fixed
+
+- **Runware route:** Target `/settings/billing` directly. The old `/wallet` redirect no longer causes the destination to fail the exact-page guard.
+- **Runware balance:** Recognize “Available balance” from the redesigned billing card, retain the old label, and exclude explicitly labelled monthly spend in the same card.
+- **Precision:** Keep full observed precision and the existing two-decimal display.
+
+### Validation
+
+Added a synthetic regression fixture based on the user-supplied screenshot, with zero, hidden, malformed, ambiguous and nested fractional amounts. The four-provider Electron suite uses the new Runware layout. Authenticated live DOM verification was unavailable; the first updated Runware collection remains a user acceptance check. Existing sessions, preferences and history are preserved.
+
 ## 2.1.2 · 2026-10-13
 
 ### Fixed

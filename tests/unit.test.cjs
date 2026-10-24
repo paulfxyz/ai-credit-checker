@@ -107,7 +107,16 @@ test("v2 preferences migrate; Fly URL is exact, configurable and constrained", (
     ),
     true,
   );
-  assert.equal(matchesPage("runware", "https://runware.ai/wallet/"), true);
+  assert.equal(providerURL("runware"), "https://runware.ai/settings/billing");
+  assert.equal(
+    matchesPage("runware", "https://runware.ai/settings/billing/?tab=credits"),
+    true,
+  );
+  assert.equal(matchesPage("runware", "https://runware.ai/wallet"), false);
+  assert.equal(
+    matchesPage("runware", "https://evil.example/settings/billing"),
+    false,
+  );
   assert.equal(matchesPage("runware", "https://runware.ai/usage"), false);
 });
 test("new provider formatting keeps stored precision and supports all modes", () => {
@@ -306,6 +315,64 @@ test("Runware reads wallet precision including styled fractional digit, not spen
     () =>
       read(
         "<section><h2>Current Balance</h2><span>$39.872</span><span>$39.99</span></section>",
+        "runware",
+      ),
+    /Ambiguous/,
+  );
+});
+
+test("Runware billing Available balance excludes nearby monthly spend", () => {
+  // Synthetic reconstruction of the supplied screenshot, not captured live DOM.
+  for (const [amount, expected] of [
+    ["$39.872", 39.872],
+    ["$0.00", 0],
+    ["$1,234.56", 1234.56],
+  ]) {
+    const html = `<main><section><header><h2>Inference credits</h2>
+      <p>Image, video, audio and language model requests</p>
+      <button>Configure</button><button>Add funds</button></header>
+      <div><p>Available balance</p><div>${amount}</div>
+      <p>Spent this month <span>$6.72</span></p></div>
+      <footer>Auto top-up <button>$25.00</button></footer></section>
+      <section><h2>Payment methods</h2><button>Add payment method</button></section></main>`;
+    assert.equal(read(html, "runware").value, expected);
+  }
+  assert.equal(
+    read(
+      "<section><p>Available balance</p><div><span>$39.87</span><small>2</small></div><p>Spent this month <b>$6.72</b></p></section>",
+      "runware",
+    ).value,
+    39.872,
+  );
+  assert.equal(
+    read('<p aria-label="Available balance: $0.00">Zero</p>', "runware").value,
+    0,
+  );
+  assert.equal(
+    read(
+      "<section><p>Available balance</p><div>$39.87</div><p>Spend this month <span>$6.72</span></p></section>",
+      "runware",
+    ).value,
+    39.87,
+  );
+  for (const html of [
+    "<section><p>Available balance</p><p>Spent this month <span>$6.72</span></p></section>",
+    "<section><p>Available balance</p><span hidden>$39.87</span><p>Spent this month <span>$6.72</span></p></section>",
+    "<section><p>Available balance</p><span>-$1.00</span><p>Spent this month <span>$6.72</span></p></section>",
+  ])
+    assert.throws(() => read(html, "runware"), /could not be identified/);
+  assert.throws(
+    () =>
+      read(
+        "<section><p>Available balance</p><span>$39.87</span><span>$40.00</span></section>",
+        "runware",
+      ),
+    /Ambiguous/,
+  );
+  assert.throws(
+    () =>
+      read(
+        "<main><section><p>Available balance</p><span>$39.87</span></section><section><p>Available balance</p><span>$40.00</span></section></main>",
         "runware",
       ),
     /Ambiguous/,

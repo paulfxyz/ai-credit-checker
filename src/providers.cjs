@@ -24,7 +24,7 @@ const SOURCES = {
   runware: {
     name: "Runware",
     short: "R",
-    url: "https://runware.ai/wallet",
+    url: "https://runware.ai/settings/billing",
     unit: "USD",
     scope: "account",
   },

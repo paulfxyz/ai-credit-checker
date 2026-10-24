@@ -29,7 +29,7 @@ async function fixture(app, negative = false) {
                 : id === "fly"
                   ? "<main><section><h2>Account Overview</h2><div><p>Account Status</p><span>Good Standing</span></div><div><p>Credit Balance</p><span>$24.50</span></div></section><section><p>Last Invoice</p><span>$500.00</span></section></main>"
                   : id === "runware"
-                    ? "<main><section><div><div><h2>Current Balance</h2><p>Available credits for API usage</p></div><span><span>$39.87</span><small>2</small></span></div><button>Add Funds</button></section><section>Spend This Month <span>$6.72</span></section></main>"
+                    ? "<main><section><header><h2>Inference credits</h2><p>Image, video, audio and language model requests</p><button>Configure</button><button>Add funds</button></header><div><p>Available balance</p><div><span>$39.87</span><small>2</small></div><p>Spent this month <span>$6.72</span></p></div><footer>Auto top-up <button>$25.00</button></footer></section><section><h2>Payment methods</h2></section></main>"
                     : '<main><section aria-label="Total available credits: $85.20"><h2>TOTAL AVAILABLE</h2><div>$85.20</div></section></main>',
             {
               headers: {
@@ -164,6 +164,13 @@ async function verifyScrolling(ui) {
     assert.equal(state.providers.fly.value, 24.5);
     assert.equal(state.providers.fly.account, "sample-org");
     assert.equal(state.providers.runware.value, 39.872);
+    assert.equal(
+      app
+        .windows()
+        .some((page) => page.url() === "https://runware.ai/settings/billing"),
+      true,
+      "Runware collector must use the new billing URL",
+    );
     await verifyScrolling(ui);
     assert.equal(await ui.locator("#runware-value").textContent(), "$39.87");
     assert.equal(await ui.locator(".balance-card").count(), 4);

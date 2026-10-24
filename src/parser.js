@@ -61,7 +61,7 @@
         : provider === "fly"
           ? ["credit balance"]
           : provider === "runware"
-            ? ["current balance"]
+            ? ["available balance", "current balance"]
             : ["total available"];
     const labelledAmount =
       provider === "perplexity"
@@ -69,7 +69,7 @@
         : provider === "fly"
           ? /^Credit Balance\s*:?\s+(.+)$/i
           : provider === "runware"
-            ? /^Current Balance\s*:?\s+(.+)$/i
+            ? /^(?:Available|Current) Balance\s*:?\s+(.+)$/i
             : /^Total available(?: credits)?\s*:?\s+(.+)$/i;
     const isLabel = (text) => expected.includes(norm(text).toLowerCase());
     // Use the account-specific available-balance label, not personal header usage.
@@ -121,6 +121,23 @@
           .filter(
             (el) => visible(el) && !el.closest('button,table,[role="tooltip"]'),
           )
+          // Runware's billing redesign puts monthly spend inside the balance
+          // card. Ignore only an explicitly labelled spend metric, including
+          // nested currency spans; never choose the first dollar amount.
+          .filter((el) => {
+            if (provider !== "runware") return true;
+            for (
+              let parent = el;
+              parent && parent !== card;
+              parent = parent.parentElement
+            ) {
+              const spend = norm(parent.textContent).match(
+                /^(?:Spent|Spend) this month\s*:?\s+(.+)$/i,
+              );
+              if (spend && number(spend[1], provider) !== null) return false;
+            }
+            return true;
+          })
           // A numeric wrapper can contain styled fractional digits. Keep the full
           // amount, not a truncated child such as "$39.87" inside "$39.872".
           .filter((el) => {

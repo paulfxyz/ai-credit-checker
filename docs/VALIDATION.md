@@ -1,5 +1,13 @@
 # Release validation
 
+## Version 2.1.3
+
+Runware now redirects the old `/wallet` URL to `/settings/billing`, as reported by the user. Their screenshot shows “Available balance” in an “Inference credits” card, with “Spent this month” nearby. The old URL guard and old-only label explain two independent incompatibilities.
+
+The new route remains exact-origin/path guarded. Synthetic tests reconstruct the visible card using non-private values and exercise both old and new labels, nested fractional digits, monthly spend in the same card, zero, hidden and malformed balances, ambiguity, wrong paths and wrong origins. The Electron suite uses the new billing fixture and retains its existing four-provider, session-persistence, menu, updater and layout coverage.
+
+Live authenticated DOM access was unavailable because this older Computer session could not start the local browser connection. The screenshot supports the visible labels, not exact DOM structure. Runware collection in the installed app therefore remains a live acceptance check. No private screenshot, account name or balance is committed.
+
 ## Version 2.1.2
 
 The double-scrollbar regression was reproduced before editing: the Overview document overflowed the viewport by 227 pixels while the inner content pane already had its own scrollbar. The fix constrains the document shell and keeps `.workspace` as the vertical scroll container.
