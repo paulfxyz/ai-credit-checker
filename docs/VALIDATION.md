@@ -1,12 +1,14 @@
 # Release validation
 
-## Version 2.1.3
+## Versions 2.1.3 and 2.1.4
 
 Runware now redirects the old `/wallet` URL to `/settings/billing`, as reported by the user. Their screenshot shows “Available balance” in an “Inference credits” card, with “Spent this month” nearby. The old URL guard and old-only label explain two independent incompatibilities.
 
-All 15 unit tests and the full Electron suite passed before packaging. The new route remains exact-origin/path guarded. Synthetic tests reconstruct the visible card using non-private values and exercise both old and new labels, nested fractional digits, monthly spend in the same card (with or without whitespace between its label and amount), zero, hidden and malformed balances, ambiguity, wrong paths and wrong origins. The Electron suite uses the new billing fixture and retains its existing four-provider, session-persistence, menu, updater and layout coverage.
+Version 2.1.3 passed 14 unit tests and the full Electron suite. The 2.1.4 follow-up adds a fifteenth unit test and hardens monthly spend exclusion for adjacent elements without whitespace; all 15 unit tests and the updated Electron suite passed on 2.1.4 before packaging. The new route remains exact-origin/path guarded. Synthetic tests reconstruct the visible card using non-private values and exercise both old and new labels, nested fractional digits, monthly spend in the same card, zero, hidden and malformed balances, ambiguity, wrong paths and wrong origins. The Electron suite uses the new billing fixture and retains its existing four-provider, session-persistence, menu, updater and layout coverage.
 
 Live authenticated DOM access was unavailable because this older Computer session could not start the local browser connection. The screenshot supports the visible labels, not exact DOM structure. Runware collection in the installed app therefore remains a live acceptance check. No private screenshot, account name or balance is committed.
+
+The first packaging run published 2.1.3 before a cancellation took effect. The additional whitespace fix is therefore shipped as 2.1.4, preserving the published tag and ZIP. Release checks now reject duplicate versions before building.
 
 ## Version 2.1.2
 

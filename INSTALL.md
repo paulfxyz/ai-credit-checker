@@ -1,10 +1,10 @@
-# Install AI Credit Checker 2.1.3
+# Install AI Credit Checker 2.1.4
 
 This release is a standalone Apple Silicon Mac app. There is no extension, Stream Deck component, local server or Terminal-based installer.
 
 ## Install
 
-1. Download `AI-Credit-Checker-2.1.3-macOS-arm64.zip` from the GitHub release.
+1. Download `AI-Credit-Checker-2.1.4-macOS-arm64.zip` from the GitHub release.
 2. Extract the ZIP and move **AI Credit Checker.app** to Applications.
 3. Open it. This build is ad-hoc signed, not Developer ID signed or notarized. If macOS blocks opening, review the notice in **System Settings → Privacy & Security** and use **Open Anyway** if offered and you choose to trust the build.
 4. If macOS says the app is damaged, or an organization policy blocks it, stop and report the exact message. Do not disable Gatekeeper, remove quarantine with Terminal commands or bypass management policies.
@@ -51,7 +51,7 @@ Enable **Open at login** in Preferences if desired. It is off by default and use
 
 ## App updates via GitHub
 
-The updater is available in **2.1.1 and later**. Use **Preferences → Check for updates → Download & restart** to install 2.1.3. From an older version, install the latest ZIP manually once.
+The updater is available in **2.1.1 and later**. Use **Preferences → Check for updates → Download & restart** to install 2.1.4. From an older version, install the latest ZIP manually once.
 
 The updater checks the public repository's latest stable release about 15 seconds after launch and every six hours while running. Disable automatic checks in Preferences if desired; manual **Check for updates** remains available there and in the native menu.
 

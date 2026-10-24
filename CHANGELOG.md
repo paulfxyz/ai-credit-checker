@@ -2,6 +2,17 @@
 
 User-facing changes by release, newest first. Dates use UTC publication dates; validation notes describe the evidence available for that release.
 
+## 2.1.4 · 2026-10-24
+
+### Fixed
+
+- **Runware nested spend:** Exclude “Spent this month” even when adjacent HTML elements join its label and amount without whitespace.
+- **Release guard:** Serialize packaging and refuse duplicate version numbers before building.
+
+### Validation
+
+All 15 unit tests and the four-provider Electron suite passed on 2.1.4 before packaging. Live Runware collection remains a user acceptance check. This follow-up preserves the already-published 2.1.3 installer and tag rather than replacing their contents.
+
 ## 2.1.3 · 2026-10-24
 
 ### Fixed
@@ -12,7 +23,7 @@ User-facing changes by release, newest first. Dates use UTC publication dates; v
 
 ### Validation
 
-All 15 unit tests and the four-provider Electron suite passed before packaging. Added synthetic regression fixtures based on the user-supplied screenshot, with zero, hidden, malformed, ambiguous and nested fractional amounts, including adjacent HTML without whitespace. The Electron suite uses the new Runware layout. Authenticated live DOM verification was unavailable; the first updated Runware collection remains a user acceptance check. Existing sessions, preferences and history are preserved.
+All 14 unit tests and the four-provider Electron suite passed before packaging. Added a synthetic regression fixture based on the user-supplied screenshot, with zero, hidden, malformed, ambiguous and nested fractional amounts. The Electron suite uses the new Runware layout. Authenticated live DOM verification was unavailable; the first updated Runware collection remains a user acceptance check. Existing sessions, preferences and history are preserved.
 
 ## 2.1.2 · 2026-10-13
 

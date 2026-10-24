@@ -3,6 +3,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: macos-release
+  cancel-in-progress: false
 jobs:
   package:
     runs-on: macos-latest
@@ -12,6 +15,16 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - name: Refuse duplicate release versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(node -p 'require("./package.json").version')"
+          EXISTING="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq ".[] | select(.tag_name == \"v${VERSION}\") | .id")"
+          if [ -n "$EXISTING" ]; then
+            echo "::error::Release v${VERSION} already exists. Bump the version; never replace published assets."
+            exit 1
+          fi
       - run: npm ci
       - run: npm test
       - name: Native updater fixture test
