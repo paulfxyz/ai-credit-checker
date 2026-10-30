@@ -21,7 +21,7 @@ Sign in to each provider's real website inside the app, then choose which counte
 
 ## Install or update
 
-1. Download **AI-Credit-Checker-2.1.6-macOS-arm64.zip** from the [latest release](https://github.com/paulfxyz/ai-credit-checker/releases/latest). If you are replacing an existing installation, quit it first.
+1. Download **AI-Credit-Checker-2.1.7-macOS-arm64.zip** from the [latest release](https://github.com/paulfxyz/ai-credit-checker/releases/latest). If you are replacing an existing installation, quit it first.
 2. Extract the ZIP and move **AI Credit Checker.app** to Applications.
 3. For Fly.io, save the organization slug from your billing URL. Use **Open account** to sign in to each provider you want to track, then **Check now** to verify its balance.
 4. Select your menu-bar counters and a **10, 30 or 60-minute** balance-check interval. Close the provider windows and enable automatic checks.
@@ -48,12 +48,12 @@ Screenshots use synthetic data captured from the running Electron app, not real 
 
 ## Four balances, two different units
 
-| Provider | What is collected | What is not collected |
-| --- | --- | --- |
+| Provider   | What is collected                                                                                                             | What is not collected                                                                                       |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Perplexity | Personal plan (default): total “credits left” from Usage and credits. Enterprise (option): available organization credit pool | Plan, purchased or bonus sub-balances on their own, credits already used, refill amounts, or a USD estimate |
-| OpenRouter | Available account balance in USD from the signed-in Credits page | A model token count or another organization's balance |
-| Fly.io | Credit Balance in USD for the configured organization | Invoice totals, active-credit usage or the Buy Credits amount |
-| Runware | Inference credits Available balance in USD, with full precision retained in history | Monthly spend, top-up transactions or payment details |
+| OpenRouter | Available account balance in USD from the signed-in Credits page                                                              | A model token count or another organization's balance                                                       |
+| Fly.io     | Purchased Credit Balance (or the older Credit Balance) in USD for the configured organization                                 | Invoice totals, active-credit usage or the Buy Credits amount                                               |
+| Runware    | Inference credits Available balance in USD, with full precision retained in history                                           | Monthly spend, top-up transactions or payment details                                                       |
 
 The collector targets [Perplexity Usage](https://www.perplexity.ai/account/usage) (or [organization Usage](https://www.perplexity.ai/account/org/credits-usage) for Enterprise), [OpenRouter Credits](https://openrouter.ai/settings/credits), the billing page for your configured [Fly.io organization](https://fly.io/dashboard), and [Runware Billing](https://runware.ai/settings/billing). Availability depends on your account role, the provider's website and successful login. Choose **Personal plan (Pro or Max)** or **Enterprise organization pool** in the Perplexity card.
 

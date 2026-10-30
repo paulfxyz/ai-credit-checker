@@ -1,5 +1,9 @@
 # Release validation
 
+## Version 2.1.7
+
+The user's 2.1.6 screenshots show both pages signed in: Perplexity's Settings modal with “74,476 credits left” and Fly.io's Billing page with “Purchased Credit Balance $298.22”. The app reported a sign-in error for Perplexity and “Available-credit label not found” for Fly.io. The Fly.io cause is the renamed label. For Perplexity, the reported error is produced only by the exact-address guard, so the signed-in modal was at a different address. The exact live address was not observable: the local browser could not start in this older Computer session. Personal mode therefore accepts any HTTPS perplexity.ai page except sign-in and organization routes, while the reader still needs the exact “credits left” text. The Electron fixture rewrites its address with `history.replaceState` and still reads 75,134; the Fly.io fixture uses the new label.
+
 ## Version 2.1.6
 
 **Perplexity personal plans.** The user's screenshots of a personal Max account show “75,134 credits left” in Settings → Usage and credits and “Total available credits 75,134 / 773,877” in the Usage menu. Perplexity's help centre links the Usage page as `https://www.perplexity.ai/account/usage`. The personal reader accepts only those two totals, never the plan, purchased or bonus sub-balances; differing totals are rejected as ambiguous. The organization reader is unchanged and selectable. The exact DOM of the live personal page was not inspected; fixtures reconstruct the visible text.

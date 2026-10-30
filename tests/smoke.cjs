@@ -27,11 +27,11 @@ async function fixture(app, negative = false) {
               ? "<h1>Please sign in</h1>"
               : id === "perplexity" &&
                   new URL(request.url).pathname === "/account/usage"
-                ? "<main><h1>Usage and credits</h1><p>Learn more about how credits work</p><section><h2>Credits</h2><div><span>75,134 credits left</span><button>Add more</button></div><div>Turn on auto-refill</div><details><summary>More details</summary><p>Plan credits 10,000</p><p>Purchased credits 758,377</p><p>Bonus credits 5,500</p></details></section></main>"
+                ? '<main><h1>Usage and credits</h1><p>Learn more about how credits work</p><section><h2>Credits</h2><div><span>75,134 credits left</span><button>Add more</button></div><div>Turn on auto-refill</div><details><summary>More details</summary><p>Plan credits 10,000</p><p>Purchased credits 758,377</p><p>Bonus credits 5,500</p></details></section></main><script>history.replaceState(null, "", "/?settings=usage")</script>'
                 : id === "perplexity"
                   ? "<main><h1>Usage</h1><section><div><div>Available organisation credits</div><h2>12,400</h2><button>Add more</button></div><p>Auto-refill enabled. 20,000 will be added when org balance is low</p></section><table><tr><td>Manual top-up</td><td>50,000</td></tr></table></main>"
                   : id === "fly"
-                    ? "<main><section><h2>Account Overview</h2><div><p>Account Status</p><span>Good Standing</span></div><div><p>Credit Balance</p><span>$24.50</span></div></section><section><p>Last Invoice</p><span>$500.00</span></section></main>"
+                    ? '<main><section><h2>Account Overview</h2><div><p>Account Status</p><span>Good Standing</span></div><div><p>Purchased Credit Balance <svg aria-label="info" width="8" height="8"></svg></p><span>$24.50</span></div></section><section><p>Last Invoice</p><span>$500.00</span></section></main>'
                     : id === "runware"
                       ? '<main id="app">Loading</main><script>requestAnimationFrame(() => requestAnimationFrame(() => { document.getElementById("app").innerHTML = "<section><header><h2>Inference credits</h2><p>Image, video, audio and language model requests</p><button>Configure</button><button>Add funds</button></header><div><p>Available balance</p><div><span>$39.87</span><small>2</small></div><p><span>Spent this month</span><span>$6.72</span></p></div><footer>Auto top-up <button>$25.00</button></footer></section><section><h2>Payment methods</h2></section>"; }));</script>'
                       : '<main><section aria-label="Total available credits: $85.20"><h2>TOTAL AVAILABLE</h2><div>$85.20</div></section></main>',
@@ -217,7 +217,7 @@ async function verifyScrolling(ui) {
     assert.equal(state.preferences.perplexityAccount, "organization");
     assert.equal(state.providers.perplexity, undefined);
     console.log(
-      "PASS Perplexity personal plan default: credits left 75,134; Enterprise pool option clears it",
+      "PASS Perplexity personal plan default: credits left 75,134 after the page rewrites its address; Enterprise pool option clears it",
     );
     await command(ui, "check-all");
     state = await checked(ui, "perplexity");

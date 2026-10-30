@@ -296,6 +296,12 @@ test("Fly reads Credit Balance, not invoices, purchases, or active-credit usage"
     read('<span aria-label="Credit Balance: $0.00">Zero</span>', "fly").value,
     0,
   );
+  // 2.1.7: Fly.io now labels it "Purchased Credit Balance" with an info icon.
+  const redesign = `<main><section><h2>Account Overview</h2>
+    <div><div>Account Status</div><p>Good Standing</p></div>
+    <div><div>Purchased Credit Balance <svg aria-label="info"></svg></div><p>$298.22</p></div></section>
+    <section><h2>Invoices</h2><div>Last Invoice</div><p>$500.00</p><div>Upcoming Invoice</div><p>$0.00</p></section></main>`;
+  assert.equal(read(redesign, "fly").value, 298.22);
 });
 test("Runware reads wallet precision including styled fractional digit, not spend or top-ups", () => {
   const html = `<main><section><div><div><h2>Current Balance</h2><p>Available credits for API usage</p></div>
@@ -451,6 +457,26 @@ test("Perplexity personal plan is the default; Enterprise pool is an option", ()
   );
   assert.equal(
     matchesPage("perplexity", "https://evil.example/account/usage"),
+    false,
+  );
+  // 2.1.7: the personal Usage page opens as a Settings modal and the address
+  // changes; any perplexity.ai page is accepted except sign-in/org routes.
+  for (const url of [
+    "https://www.perplexity.ai/",
+    "https://www.perplexity.ai/?settings=usage",
+    "https://www.perplexity.ai/account/usage?tab=credits",
+    "https://perplexity.ai/settings/usage",
+  ])
+    assert.equal(matchesPage("perplexity", url), true, url);
+  for (const url of [
+    "https://www.perplexity.ai/login",
+    "https://www.perplexity.ai/auth/signin",
+    "http://www.perplexity.ai/account/usage",
+    "https://perplexity.ai.evil.example/account/usage",
+  ])
+    assert.equal(matchesPage("perplexity", url), false, url);
+  assert.equal(
+    matchesPage("perplexity", "https://www.perplexity.ai/", org),
     false,
   );
 });

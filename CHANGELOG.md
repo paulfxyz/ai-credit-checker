@@ -2,6 +2,17 @@
 
 User-facing changes by release, newest first. Dates use UTC publication dates; validation notes describe the evidence available for that release.
 
+## 2.1.7 · 2026-10-30
+
+### Fixed
+
+- **Perplexity personal check failed with “Sign-in, verification, or organization selection is required”:** Perplexity opens Usage and credits as a Settings modal and changes the page address, so the exact `/account/usage` guard rejected a signed-in page. In personal mode the guard now accepts any `https://www.perplexity.ai` page except sign-in and organization routes; the reader still requires the exact “credits left” total.
+- **Fly.io “Available-credit label not found”:** Fly.io renamed the billing label to “Purchased Credit Balance.” The parser accepts it alongside the older “Credit Balance,” still ignoring invoices.
+
+### Validation
+
+- 17 unit tests, now including rewritten Perplexity addresses, rejected sign-in, http and look-alike hosts, and Fly.io's new label with an info icon. The Electron suite's Perplexity fixture rewrites its address after loading and the Fly.io fixture uses the new label. Live checks remain user acceptance checks.
+
 ## 2.1.6 · 2026-10-30
 
 ### Added

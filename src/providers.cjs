@@ -75,6 +75,19 @@ function matchesPage(id, value, preferences = {}) {
   try {
     const expected = new URL(providerURL(id, preferences));
     const actual = new URL(value);
+    // Perplexity's personal Usage page opens as a Settings modal and the app
+    // rewrites the address (for example to the home page with a settings
+    // route). Accept any perplexity.ai page except sign-in and organization
+    // routes; the
+    // personal reader still requires the exact "credits left" total.
+    if (id === "perplexity" && perplexityAccount(preferences) === "personal")
+      return (
+        actual.protocol === "https:" &&
+        /^(?:www\.)?perplexity\.ai$/i.test(actual.hostname) &&
+        !/^\/(?:login|signin|sign-in|auth|sso|join|account\/org)(?:\/|$)/i.test(
+          actual.pathname,
+        )
+      );
     return (
       actual.origin === expected.origin &&
       actual.pathname.replace(/\/$/, "") === expected.pathname

@@ -144,7 +144,7 @@
             "available organisation credits",
           ]
         : provider === "fly"
-          ? ["credit balance"]
+          ? ["credit balance", "purchased credit balance"]
           : provider === "runware"
             ? ["available balance", "current balance"]
             : ["total available"];
@@ -152,7 +152,7 @@
       provider === "perplexity"
         ? /^Available (?:org|organization|organisation) credits\s*:?\s+(.+)$/i
         : provider === "fly"
-          ? /^Credit Balance\s*:?\s+(.+)$/i
+          ? /^(?:Purchased )?Credit Balance\s*:?\s+(.+)$/i
           : provider === "runware"
             ? /^(?:Available|Current) Balance\s*:?\s+(.+)$/i
             : /^Total available(?: credits)?\s*:?\s+(.+)$/i;

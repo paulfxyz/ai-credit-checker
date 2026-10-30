@@ -550,9 +550,9 @@ async function readBalance(win, id) {
     try {
       const result = await Promise.race([
         win.webContents.executeJavaScript(`(() => {
-          const expected = ${JSON.stringify(providerURL(id, state.preferences))};
-          const actual = new URL(location.href), target = new URL(expected);
-          if (actual.origin !== target.origin || actual.pathname.replace(/\\/$/, '') !== target.pathname)
+          // The main process checked the full address with matchesPage; recheck
+          // the origin here in case the page navigated in between.
+          if (location.origin !== ${JSON.stringify(new URL(win.webContents.getURL()).origin)})
             return { error: 'Sign-in or verification is required.' };
           ${parser}
           try { return CreditParser.read(document, ${JSON.stringify(parserKey(id, state.preferences))}); }
