@@ -1,11 +1,16 @@
 "use strict";
 const STALE_MS = 20 * 60 * 1000;
-const { SOURCES, organizationSlug } = require("./providers.cjs");
+const {
+  SOURCES,
+  organizationSlug,
+  perplexityAccount,
+} = require("./providers.cjs");
 const DEFAULT_PREFERENCES = {
   menuBar: Object.keys(SOURCES),
   compact: true,
   launchAtLogin: false,
   flyOrganization: "",
+  perplexityAccount: "personal",
   autoUpdateChecks: true,
   checkIntervalMinutes: 10,
 };
@@ -65,6 +70,7 @@ function normalizePreferences(input) {
     compact: input?.compact !== false,
     launchAtLogin: input?.launchAtLogin === true,
     flyOrganization: organizationSlug(input?.flyOrganization),
+    perplexityAccount: perplexityAccount(input),
     autoUpdateChecks: input?.autoUpdateChecks !== false,
     checkIntervalMinutes: [10, 30, 60].includes(input?.checkIntervalMinutes)
       ? input.checkIntervalMinutes
@@ -87,7 +93,8 @@ function importObservations(old) {
     return {
       value: row.value,
       unit: SOURCES[id].unit,
-      scope: SOURCES[id].scope,
+      // The pre-2.0 POC only read Perplexity organization pools.
+      scope: id === "perplexity" ? "organization" : SOURCES[id].scope,
       observedAt: row.observedAt,
       checkedAt: row.checkedAt || row.observedAt,
       status: imported ? "imported" : row.status === "ok" ? "ok" : "error",

@@ -3,9 +3,12 @@ const SOURCES = {
   perplexity: {
     name: "Perplexity",
     short: "P",
-    url: "https://www.perplexity.ai/account/org/credits-usage",
+    // Default: personal Usage page ("N credits left"). Organization pools stay
+    // available as an option for Enterprise accounts.
+    url: "https://www.perplexity.ai/account/usage",
+    organizationURL: "https://www.perplexity.ai/account/org/credits-usage",
     unit: "credits",
-    scope: "organization",
+    scope: "account",
   },
   openrouter: {
     name: "OpenRouter",
@@ -33,8 +36,37 @@ function organizationSlug(value) {
   const s = typeof value === "string" ? value.trim().toLowerCase() : "";
   return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(s) ? s : "";
 }
+function perplexityAccount(preferences = {}) {
+  return preferences.perplexityAccount === "organization"
+    ? "organization"
+    : "personal";
+}
+// The balance scope recorded with each observation.
+function providerScope(id, preferences = {}) {
+  if (id === "perplexity")
+    return perplexityAccount(preferences) === "organization"
+      ? "organization"
+      : "account";
+  return SOURCES[id].scope;
+}
+// Account identity used to keep histories from different accounts apart.
+function providerAccount(id, preferences = {}) {
+  if (id === "fly") return organizationSlug(preferences.flyOrganization);
+  if (id === "perplexity") return perplexityAccount(preferences);
+  return undefined;
+}
+// The parser rule for this provider and account type.
+function parserKey(id, preferences = {}) {
+  return id === "perplexity" && perplexityAccount(preferences) === "personal"
+    ? "perplexity-personal"
+    : id;
+}
 function providerURL(id, preferences = {}) {
   if (!Object.hasOwn(SOURCES, id)) return null;
+  if (id === "perplexity")
+    return perplexityAccount(preferences) === "organization"
+      ? SOURCES.perplexity.organizationURL
+      : SOURCES.perplexity.url;
   if (id !== "fly") return SOURCES[id].url;
   const org = organizationSlug(preferences.flyOrganization);
   return org ? `https://fly.io/dashboard/${org}/billing` : null;
@@ -51,4 +83,13 @@ function matchesPage(id, value, preferences = {}) {
     return false;
   }
 }
-module.exports = { SOURCES, organizationSlug, providerURL, matchesPage };
+module.exports = {
+  SOURCES,
+  organizationSlug,
+  perplexityAccount,
+  providerScope,
+  providerAccount,
+  parserKey,
+  providerURL,
+  matchesPage,
+};

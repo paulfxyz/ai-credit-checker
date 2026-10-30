@@ -55,7 +55,7 @@
                 <span class="provider-mark">P</span>
                 <div>
                   <h2>Perplexity</h2>
-                  <p>Organization credit pool</p>
+                  <p id="perplexity-scope">Personal credits</p>
                 </div>
                 <span id="perplexity-badge" class="state-badge"
                   >Not connected</span
@@ -73,6 +73,23 @@
               <p class="status" id="perplexity-status">
                 Connect your account to see its balance.
               </p>
+              <div class="account-config">
+                <label for="perplexity-account">Perplexity account</label>
+                <div>
+                  <select
+                    id="perplexity-account"
+                    aria-describedby="perplexity-hint"
+                  >
+                    <option value="personal">Personal plan (Pro or Max)</option>
+                    <option value="organization">
+                      Enterprise organization pool
+                    </option>
+                  </select>
+                </div>
+                <p id="perplexity-hint">
+                  Reads “credits left” in Usage and credits.
+                </p>
+              </div>
               <div class="card-actions">
                 <button data-open="perplexity" class="secondary">
                   Open account ↗</button

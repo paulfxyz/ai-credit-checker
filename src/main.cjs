@@ -22,7 +22,14 @@ const {
   normalizePreferences,
   importObservations,
 } = require("./model.cjs");
-const { SOURCES, providerURL, matchesPage } = require("./providers.cjs");
+const {
+  SOURCES,
+  providerURL,
+  providerScope,
+  providerAccount,
+  parserKey,
+  matchesPage,
+} = require("./providers.cjs");
 const updater = require("./updater.cjs");
 
 // This override is for isolated automated tests. It never touches the real profile.
@@ -191,6 +198,17 @@ function setPreferences(input) {
   const prefs = normalizePreferences({ ...state.preferences, ...input });
   if (input?.flyOrganization && !prefs.flyOrganization)
     throw new Error("Enter a valid Fly.io organization slug, not a URL.");
+  if (prefs.perplexityAccount !== state.preferences.perplexityAccount) {
+    if (busy.has("perplexity"))
+      throw new Error(
+        "Wait for the Perplexity check to finish before changing account type.",
+      );
+    // A personal balance and an organization pool are different numbers.
+    delete state.providers.perplexity;
+    const win = windows.get("perplexity");
+    if (win && !win.isDestroyed()) win.destroy();
+    windows.delete("perplexity");
+  }
   if (prefs.flyOrganization !== state.preferences.flyOrganization) {
     if (busy.has("fly"))
       throw new Error(
@@ -359,6 +377,43 @@ function record(id, result) {
 function sourceMatches(id, value) {
   return matchesPage(id, value, state.preferences);
 }
+// Fly.io's sign-in cookie (_fly) is a session cookie: it has no expiry, so
+// Chromium deletes it when the app quits and Fly.io asks for a new sign-in on
+// every launch. Perplexity, OpenRouter and Runware use expiring cookies and are
+// unaffected. Inside the isolated Fly.io partition only, give first-party
+// fly.io session cookies a 30-day local lifetime so they survive restarts.
+// Fly.io's server still decides whether the session is valid; signing out on
+// fly.io removes the cookie as usual.
+const PERSIST_SESSION_COOKIES = { fly: /(^|\.)fly\.io$/i };
+const SESSION_COOKIE_DAYS = 30;
+function persistSessionCookies(id, s) {
+  const domain = PERSIST_SESSION_COOKIES[id];
+  if (!domain) return;
+  s.cookies.on("changed", (_event, cookie, _cause, removed) => {
+    if (removed || !cookie.session || cookie.expirationDate) return;
+    const host = String(cookie.domain || "").replace(/^\./, "");
+    if (!domain.test(host)) return;
+    const details = {
+      url: `${cookie.secure ? "https" : "http"}://${host}${cookie.path || "/"}`,
+      name: cookie.name,
+      value: cookie.value,
+      path: cookie.path || "/",
+      secure: cookie.secure,
+      httpOnly: cookie.httpOnly,
+      expirationDate:
+        Math.floor(Date.now() / 1000) + SESSION_COOKIE_DAYS * 86400,
+    };
+    // Host-only cookies must stay host-only; only pass a domain when it had one.
+    if (String(cookie.domain || "").startsWith("."))
+      details.domain = cookie.domain;
+    if (cookie.sameSite && cookie.sameSite !== "unspecified")
+      details.sameSite = cookie.sameSite;
+    s.cookies
+      .set(details)
+      .then(() => s.cookies.flushStore())
+      .catch(() => {});
+  });
+}
 function securePreferences(id) {
   return {
     partition: `persist:ai-credit-checker-${id}`,
@@ -500,7 +555,7 @@ async function readBalance(win, id) {
           if (actual.origin !== target.origin || actual.pathname.replace(/\\/$/, '') !== target.pathname)
             return { error: 'Sign-in or verification is required.' };
           ${parser}
-          try { return CreditParser.read(document, ${JSON.stringify(id)}); }
+          try { return CreditParser.read(document, ${JSON.stringify(parserKey(id, state.preferences))}); }
           catch (error) {
             // Fixed parser messages only; never export arbitrary page exceptions.
             const allowed = [
@@ -557,8 +612,8 @@ async function check(id) {
       method: result.method,
       observedAt,
       unit: SOURCES[id].unit,
-      scope: SOURCES[id].scope,
-      ...(id === "fly" ? { account: state.preferences.flyOrganization } : {}),
+      scope: providerScope(id, state.preferences),
+      account: providerAccount(id, state.preferences),
       status: "ok",
       error: null,
     });
@@ -677,6 +732,12 @@ else {
     clearInterval(trayTimer);
     clearInterval(updateTimer);
     clearTimeout(updateStartupTimer);
+    // Write pending cookie changes before exit so sign-ins survive restarts.
+    for (const id of Object.keys(SOURCES))
+      session
+        .fromPartition(`persist:ai-credit-checker-${id}`)
+        .cookies.flushStore()
+        .catch(() => {});
   });
   app.on("window-all-closed", () => {});
   app.on("activate", showDashboard);
@@ -707,6 +768,14 @@ else {
       }
     }
     state.preferences = normalizePreferences(state.preferences);
+    // Before 2.1.6 Perplexity always read the organization pool. Upgrades
+    // default to the personal balance, so do not show an old pool reading as it.
+    const savedPerplexity = state.providers?.perplexity;
+    if (
+      savedPerplexity &&
+      savedPerplexity.scope !== providerScope("perplexity", state.preferences)
+    )
+      delete state.providers.perplexity;
     if (process.platform === "darwin")
       state.preferences.launchAtLogin = app.getLoginItemSettings().openAtLogin;
     for (const id of Object.keys(SOURCES)) {
@@ -716,6 +785,7 @@ else {
       );
       s.setPermissionCheckHandler(() => false);
       s.on("will-download", (event) => event.preventDefault());
+      persistSessionCookies(id, s);
     }
     Menu.setApplicationMenu(
       Menu.buildFromTemplate([

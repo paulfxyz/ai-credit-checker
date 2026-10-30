@@ -31,7 +31,12 @@ function chart(id, history) {
         r.provider === id &&
         r.status === "ok" &&
         Number.isFinite(r.value) &&
-        (id !== "fly" || r.account === latest.preferences.flyOrganization),
+        (id !== "fly" || r.account === latest.preferences.flyOrganization) &&
+        (id !== "perplexity" ||
+          r.scope ===
+            (latest.preferences.perplexityAccount === "organization"
+              ? "organization"
+              : "account")),
     )
     .slice(-24);
   const ns = "http://www.w3.org/2000/svg";
@@ -79,6 +84,15 @@ function render(state) {
   if (document.activeElement !== $("fly-organization"))
     $("fly-organization").value = state.preferences.flyOrganization || "";
   $("fly-save").disabled = state.running.includes("fly");
+  const organization = state.preferences.perplexityAccount === "organization";
+  $("perplexity-account").value = organization ? "organization" : "personal";
+  $("perplexity-account").disabled = state.running.includes("perplexity");
+  $("perplexity-scope").textContent = organization
+    ? "Organization credit pool"
+    : "Personal credits";
+  $("perplexity-hint").textContent = organization
+    ? "Reads the organization pool. Needs Enterprise org access."
+    : "Reads “credits left” in Usage and credits.";
   $("compact").checked = state.preferences.compact;
   $("launch-login").checked = state.preferences.launchAtLogin;
   $("auto-updates").checked = state.preferences.autoUpdateChecks;
@@ -155,7 +169,15 @@ function render(state) {
   for (const item of allRows.slice(-100).reverse()) {
     const row = document.createElement("tr");
     for (const value of [
-      `${names[item.provider] || item.provider}${item.provider === "fly" && item.account ? " · " + item.account : ""}`,
+      `${names[item.provider] || item.provider}${
+        item.provider === "fly" && item.account
+          ? " · " + item.account
+          : item.provider === "perplexity" && item.status === "ok"
+            ? item.scope === "organization"
+              ? " · organization"
+              : " · personal"
+            : ""
+      }`,
       new Date(item.checkedAt).toLocaleString(),
       item.status === "ok" ? format(item.provider, item.value) : "∞",
       item.status === "ok" ? "Observed" : "Failed",
@@ -244,6 +266,8 @@ $("launch-login").onchange = (event) =>
 $("auto-updates").onchange = (event) =>
   command("preferences", { autoUpdateChecks: event.target.checked });
 $("history-filter").onchange = () => latest && render(latest);
+$("perplexity-account").onchange = (event) =>
+  command("preferences", { perplexityAccount: event.target.value });
 $("fly-config").onsubmit = async (event) => {
   event.preventDefault();
   const slug = $("fly-organization").value.trim();

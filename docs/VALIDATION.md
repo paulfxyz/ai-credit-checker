@@ -1,5 +1,11 @@
 # Release validation
 
+## Version 2.1.6
+
+**Perplexity personal plans.** The user's screenshots of a personal Max account show “75,134 credits left” in Settings → Usage and credits and “Total available credits 75,134 / 773,877” in the Usage menu. Perplexity's help centre links the Usage page as `https://www.perplexity.ai/account/usage`. The personal reader accepts only those two totals, never the plan, purchased or bonus sub-balances; differing totals are rejected as ambiguous. The organization reader is unchanged and selectable. The exact DOM of the live personal page was not inspected; fixtures reconstruct the visible text.
+
+**Fly.io sign-in.** An unauthenticated request to fly.io returned `_fly` with no `Expires` or `Max-Age`, a browser-session cookie. A standalone probe on this Electron version showed an expiry-less cookie in a persistent partition is gone after a restart while an expiring cookie remains, matching the report that only Fly.io needed a new sign-in. The fix gives first-party fly.io session cookies a 30-day local expiry in the Fly.io partition only, preserving host-only scope, Secure, HttpOnly and SameSite, and flushes cookie stores before quit. The Electron suite verifies `_fly` survives a restart, a non-Fly cookie in the same partition does not, and other providers' session cookies are unchanged.
+
 ## Version 2.1.5
 
 The user reported that Runware succeeded only while its account window was open. Closing an account window hides it. A standalone Electron probe without automation attached showed a shown-then-hidden window stops running animation frames, so a client-rendered fixture stayed on its loading state; a never-shown offscreen window rendered it. This matches the reported "Available-credit label not found" error with the window closed.

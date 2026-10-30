@@ -2,6 +2,26 @@
 
 User-facing changes by release, newest first. Dates use UTC publication dates; validation notes describe the evidence available for that release.
 
+## 2.1.6 · 2026-10-30
+
+### Added
+
+- **Perplexity personal plans:** The Perplexity card now has an account choice. **Personal plan (Pro or Max)** is the default and reads “credits left” from Usage and credits (`/account/usage`), the same total as “Total available credits” in the Usage menu. **Enterprise organization pool** keeps the previous organization reader.
+
+### Fixed
+
+- **Fly.io sign-in not remembered:** Fly.io's sign-in cookie (`_fly`) has no expiry, so Chromium deleted it on every quit or update. Perplexity, OpenRouter and Runware cookies have expiry dates. Inside the isolated Fly.io partition only, first-party fly.io session cookies are now kept for 30 days locally, and cookie stores are flushed before quitting. Fly.io still decides whether a session is valid.
+
+### Changed
+
+- Upgrades default to the personal Perplexity balance. A saved organization reading is not shown as personal; choose Enterprise to keep the previous behaviour. History rows are labelled personal or organization, and the chart shows only the selected type.
+
+### Validation
+
+- 17 unit tests: personal and Enterprise URLs, page guard, preference allowlist, and personal parsing (settings text, styled numbers, Usage menu “75,134 / 773,877”, zero, singular, accessible labels, hidden, ambiguous and malformed values). Plan, purchased and bonus sub-balances are never read.
+- Electron suite: default personal read of a synthetic Usage and credits page, Enterprise switch clearing it, and the organization reader. A synthetic `_fly` session cookie survives an app restart, while a non-Fly cookie in that partition and an OpenRouter session cookie do not.
+- A standalone probe on this Electron version confirmed an expiry-less cookie is deleted across restarts while an expiring cookie survives, matching the report. Live checks of the personal Perplexity page and Fly.io after restart remain user acceptance checks.
+
 ## 2.1.5 · 2026-10-24
 
 ### Fixed

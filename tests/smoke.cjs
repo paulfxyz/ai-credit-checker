@@ -25,13 +25,16 @@ async function fixture(app, negative = false) {
           new Response(
             negative
               ? "<h1>Please sign in</h1>"
-              : id === "perplexity"
-                ? "<main><h1>Usage</h1><section><div><div>Available organisation credits</div><h2>12,400</h2><button>Add more</button></div><p>Auto-refill enabled. 20,000 will be added when org balance is low</p></section><table><tr><td>Manual top-up</td><td>50,000</td></tr></table></main>"
-                : id === "fly"
-                  ? "<main><section><h2>Account Overview</h2><div><p>Account Status</p><span>Good Standing</span></div><div><p>Credit Balance</p><span>$24.50</span></div></section><section><p>Last Invoice</p><span>$500.00</span></section></main>"
-                  : id === "runware"
-                    ? '<main id="app">Loading</main><script>requestAnimationFrame(() => requestAnimationFrame(() => { document.getElementById("app").innerHTML = "<section><header><h2>Inference credits</h2><p>Image, video, audio and language model requests</p><button>Configure</button><button>Add funds</button></header><div><p>Available balance</p><div><span>$39.87</span><small>2</small></div><p><span>Spent this month</span><span>$6.72</span></p></div><footer>Auto top-up <button>$25.00</button></footer></section><section><h2>Payment methods</h2></section>"; }));</script>'
-                    : '<main><section aria-label="Total available credits: $85.20"><h2>TOTAL AVAILABLE</h2><div>$85.20</div></section></main>',
+              : id === "perplexity" &&
+                  new URL(request.url).pathname === "/account/usage"
+                ? "<main><h1>Usage and credits</h1><p>Learn more about how credits work</p><section><h2>Credits</h2><div><span>75,134 credits left</span><button>Add more</button></div><div>Turn on auto-refill</div><details><summary>More details</summary><p>Plan credits 10,000</p><p>Purchased credits 758,377</p><p>Bonus credits 5,500</p></details></section></main>"
+                : id === "perplexity"
+                  ? "<main><h1>Usage</h1><section><div><div>Available organisation credits</div><h2>12,400</h2><button>Add more</button></div><p>Auto-refill enabled. 20,000 will be added when org balance is low</p></section><table><tr><td>Manual top-up</td><td>50,000</td></tr></table></main>"
+                  : id === "fly"
+                    ? "<main><section><h2>Account Overview</h2><div><p>Account Status</p><span>Good Standing</span></div><div><p>Credit Balance</p><span>$24.50</span></div></section><section><p>Last Invoice</p><span>$500.00</span></section></main>"
+                    : id === "runware"
+                      ? '<main id="app">Loading</main><script>requestAnimationFrame(() => requestAnimationFrame(() => { document.getElementById("app").innerHTML = "<section><header><h2>Inference credits</h2><p>Image, video, audio and language model requests</p><button>Configure</button><button>Add funds</button></header><div><p>Available balance</p><div><span>$39.87</span><small>2</small></div><p><span>Spent this month</span><span>$6.72</span></p></div><footer>Auto top-up <button>$25.00</button></footer></section><section><h2>Payment methods</h2></section>"; }));</script>'
+                      : '<main><section aria-label="Total available credits: $85.20"><h2>TOTAL AVAILABLE</h2><div>$85.20</div></section></main>',
             {
               headers: {
                 "content-type": "text/html",
@@ -180,8 +183,44 @@ async function verifyScrolling(ui) {
       () => document.getElementById("notice").textContent === "",
     );
     await command(ui, "preferences", { flyOrganization: "sample-org" });
+    // 2.1.6: personal plans (Pro/Max) are the default and read "credits left".
+    let state = await command(ui, "state");
+    assert.equal(state.preferences.perplexityAccount, "personal");
+    assert.equal(
+      await ui.locator("#perplexity-scope").textContent(),
+      "Personal credits",
+    );
+    await command(ui, "check", "perplexity");
+    state = await checked(ui, "perplexity");
+    assert.equal(
+      state.providers.perplexity.status,
+      "ok",
+      state.providers.perplexity.error,
+    );
+    assert.equal(state.providers.perplexity.value, 75134);
+    assert.equal(state.providers.perplexity.scope, "account");
+    assert.equal(state.providers.perplexity.account, "personal");
+    assert.ok(
+      (await requested(app)).includes(
+        "https://www.perplexity.ai/account/usage",
+      ),
+    );
+    assert.equal(await ui.locator("#perplexity-value").textContent(), "75,134");
+    // Switching to an Enterprise pool clears the personal reading and URL.
+    await ui.locator("#perplexity-account").selectOption("organization");
+    await ui.waitForFunction(
+      () =>
+        document.getElementById("perplexity-scope").textContent ===
+        "Organization credit pool",
+    );
+    state = await command(ui, "state");
+    assert.equal(state.preferences.perplexityAccount, "organization");
+    assert.equal(state.providers.perplexity, undefined);
+    console.log(
+      "PASS Perplexity personal plan default: credits left 75,134; Enterprise pool option clears it",
+    );
     await command(ui, "check-all");
-    let state = await checked(ui, "perplexity");
+    state = await checked(ui, "perplexity");
     state = await checked(ui, "openrouter");
     state = await checked(ui, "fly");
     state = await checked(ui, "runware");
@@ -431,7 +470,71 @@ async function verifyScrolling(ui) {
         secure: true,
       });
       await s.cookies.flushStore();
+      // Fly.io's real sign-in cookie (_fly) is a session cookie with no expiry.
+      const fly = session.fromPartition("persist:ai-credit-checker-fly");
+      await fly.cookies.set({
+        url: "https://fly.io/",
+        name: "_fly",
+        value: "fly-session-fixture",
+        path: "/",
+        secure: true,
+        httpOnly: true,
+      });
+      await fly.cookies.set({
+        url: "https://api.fly.io/",
+        domain: ".fly.io",
+        name: "fly_domain_session",
+        value: "domain-fixture",
+        secure: true,
+      });
+      // Not Fly.io: must stay a normal session cookie and expire on quit.
+      await fly.cookies.set({
+        url: "https://github.com/",
+        name: "third_party_session",
+        value: "must-expire",
+        secure: true,
+      });
+      // Other providers keep Chromium's normal session-cookie behaviour.
+      await session
+        .fromPartition("persist:ai-credit-checker-openrouter")
+        .cookies.set({
+          url: "https://openrouter.ai/",
+          name: "openrouter_session_fixture",
+          value: "must-expire",
+          secure: true,
+        });
     });
+    const flyBefore = await app.evaluate(async ({ session }) => {
+      const s = session.fromPartition("persist:ai-credit-checker-fly");
+      for (let i = 0; i < 50; i++) {
+        const all = await s.cookies.get({});
+        const fly = all.find((c) => c.name === "_fly");
+        if (fly && !fly.session) return all;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      return s.cookies.get({});
+    });
+    const flyCookie = flyBefore.find((c) => c.name === "_fly");
+    assert.equal(
+      flyCookie.session,
+      false,
+      "Fly.io session cookie must be persisted",
+    );
+    assert.equal(flyCookie.httpOnly, true);
+    assert.equal(flyCookie.secure, true);
+    assert.equal(
+      flyCookie.domain,
+      "fly.io",
+      "host-only cookie stays host-only",
+    );
+    assert.ok(
+      flyCookie.expirationDate > Date.now() / 1000 + 29 * 86400 &&
+        flyCookie.expirationDate < Date.now() / 1000 + 31 * 86400,
+    );
+    assert.equal(
+      flyBefore.find((c) => c.name === "third_party_session").session,
+      true,
+    );
     await app.close();
     app = null;
     launched = await launch(profile);
@@ -458,6 +561,31 @@ async function verifyScrolling(ui) {
         .cookies.get({ name: "poc_fixture_only" }),
     );
     assert.equal(otherCookies.length, 0);
+    const flyAfter = await app.evaluate(async ({ session }) =>
+      session.fromPartition("persist:ai-credit-checker-fly").cookies.get({}),
+    );
+    assert.equal(
+      flyAfter.find((c) => c.name === "_fly")?.value,
+      "fly-session-fixture",
+      "Fly.io sign-in must survive an app restart",
+    );
+    assert.equal(
+      flyAfter.find((c) => c.name === "fly_domain_session")?.domain,
+      ".fly.io",
+    );
+    assert.equal(
+      flyAfter.some((c) => c.name === "third_party_session"),
+      false,
+    );
+    const openrouterAfter = await app.evaluate(async ({ session }) =>
+      session
+        .fromPartition("persist:ai-credit-checker-openrouter")
+        .cookies.get({ name: "openrouter_session_fixture" }),
+    );
+    assert.equal(openrouterAfter.length, 0);
+    console.log(
+      "PASS Fly.io sign-in survives restart; other session cookies keep normal behaviour",
+    );
     console.log(
       "PASS restart persistence: observations, preference, isolated synthetic session cookie",
     );

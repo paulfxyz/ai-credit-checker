@@ -45,10 +45,95 @@
       );
     return set.length ? set[0] : null;
   }
+  // Personal Perplexity plans (Pro, Max) show the spendable total in Settings →
+  // Usage and credits as "75,134 credits left", and in the Usage menu as
+  // "Total available credits 75,134 / 773,877". Read only those totals, never
+  // the plan, purchased or bonus sub-balances.
+  function readPersonalPerplexity(doc) {
+    const left = /^(\d[\d, ]*) credits? left$/i;
+    const total =
+      /^Total available credits\s*:?\s*(\d[\d, ]*)(?:\s*\/\s*\d[\d, ]*)?$/i;
+    const pick = (text) => {
+      const t = norm(text);
+      const m = t.match(left) || t.match(total);
+      return m ? number(m[1].trim(), "perplexity") : undefined;
+    };
+    const aria = exact(
+      [...doc.querySelectorAll("[aria-label]")]
+        .filter(visible)
+        .map((el) => pick(el.getAttribute("aria-label")) ?? null),
+    );
+    if (aria !== null)
+      return { value: aria, method: "credits-left accessible label" };
+    const values = [];
+    let labelled = false;
+    for (const el of doc.body.querySelectorAll("*")) {
+      if (
+        !visible(el) ||
+        ["SCRIPT", "STYLE", "SVG", "PATH"].includes(el.tagName)
+      )
+        continue;
+      if (/^Total available credits$/i.test(norm(el.textContent))) {
+        // Label and amount in separate elements, as in the Usage menu.
+        const next = norm(el.nextElementSibling?.textContent).match(
+          /^(\d[\d, ]*)(?:\s*\/\s*\d[\d, ]*)?$/,
+        );
+        if (
+          ![...el.children].some((c) =>
+            /^Total available credits$/i.test(norm(c.textContent)),
+          )
+        ) {
+          labelled = true;
+          values.push(next ? number(next[1].trim(), "perplexity") : null);
+        }
+        continue;
+      }
+      const value = pick(el.textContent);
+      if (value === undefined) continue;
+      // Innermost element only, so wrappers do not count the same text twice.
+      if ([...el.children].some((c) => pick(c.textContent) !== undefined))
+        continue;
+      labelled = true;
+      values.push(value);
+    }
+    const lines = String(doc.body.innerText || "")
+      .split(/\r?\n/)
+      .map(norm)
+      .filter(Boolean);
+    for (let i = 0; i < lines.length; i++) {
+      const value = pick(lines[i]);
+      if (value !== undefined) {
+        labelled = true;
+        values.push(value);
+      } else if (/^Total available credits$/i.test(lines[i])) {
+        labelled = true;
+        const next = (lines[i + 1] || "").match(
+          /^(\d[\d, ]*)(?:\s*\/\s*\d[\d, ]*)?$/,
+        );
+        values.push(next ? number(next[1].trim(), "perplexity") : null);
+      }
+    }
+    const value = exact(values);
+    if (value !== null) return { value, method: "credits-left total" };
+    throw new Error(
+      labelled
+        ? "Available-credit label found, but its exact balance could not be identified."
+        : "Available-credit label not found. Open the credit page and check login, org access and English page language.",
+    );
+  }
   function read(doc, provider) {
-    if (!["perplexity", "openrouter", "fly", "runware"].includes(provider))
+    if (
+      ![
+        "perplexity",
+        "perplexity-personal",
+        "openrouter",
+        "fly",
+        "runware",
+      ].includes(provider)
+    )
       throw new Error("Unknown provider.");
     if (!doc.body) throw new Error("Waiting for page content.");
+    if (provider === "perplexity-personal") return readPersonalPerplexity(doc);
     // The live UK-English account page says "Available organisation credits".
     // Accept only these explicit available-pool labels, not generic credits/usage.
     const expected =

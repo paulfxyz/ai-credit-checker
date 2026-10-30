@@ -12,7 +12,12 @@ const {
   display,
   staleMs,
 } = require("../src/model.cjs");
-const { providerURL, matchesPage } = require("../src/providers.cjs");
+const {
+  providerURL,
+  matchesPage,
+  providerScope,
+  parserKey,
+} = require("../src/providers.cjs");
 const now = Date.now();
 const ok = (value) => ({
   value,
@@ -64,6 +69,7 @@ test("preferences are allowlisted, not arbitrary IPC settings", () => {
       compact: false,
       launchAtLogin: false,
       flyOrganization: "",
+      perplexityAccount: "personal",
       autoUpdateChecks: true,
       checkIntervalMinutes: 10,
     },
@@ -398,4 +404,100 @@ test("Runware spend labels do not require whitespace between HTML elements", () 
       /could not be identified/,
     );
   }
+});
+
+test("Perplexity personal plan is the default; Enterprise pool is an option", () => {
+  assert.equal(normalizePreferences({}).perplexityAccount, "personal");
+  assert.equal(
+    normalizePreferences({ perplexityAccount: "nonsense" }).perplexityAccount,
+    "personal",
+  );
+  assert.equal(
+    normalizePreferences({ perplexityAccount: "organization" })
+      .perplexityAccount,
+    "organization",
+  );
+  assert.equal(
+    providerURL("perplexity"),
+    "https://www.perplexity.ai/account/usage",
+  );
+  assert.equal(providerScope("perplexity", {}), "account");
+  assert.equal(parserKey("perplexity", {}), "perplexity-personal");
+  const org = { perplexityAccount: "organization" };
+  assert.equal(
+    providerURL("perplexity", org),
+    "https://www.perplexity.ai/account/org/credits-usage",
+  );
+  assert.equal(providerScope("perplexity", org), "organization");
+  assert.equal(parserKey("perplexity", org), "perplexity");
+  assert.equal(
+    matchesPage("perplexity", "https://www.perplexity.ai/account/usage/"),
+    true,
+  );
+  assert.equal(
+    matchesPage(
+      "perplexity",
+      "https://www.perplexity.ai/account/org/credits-usage",
+    ),
+    false,
+  );
+  assert.equal(
+    matchesPage(
+      "perplexity",
+      "https://www.perplexity.ai/account/org/credits-usage",
+      org,
+    ),
+    true,
+  );
+  assert.equal(
+    matchesPage("perplexity", "https://evil.example/account/usage"),
+    false,
+  );
+});
+
+test("Perplexity personal reads credits left, never plan, purchased or bonus", () => {
+  const p = (html) => read(html, "perplexity-personal");
+  // Settings → Usage and credits, as in the user's screenshot.
+  assert.equal(
+    p(
+      "<section><h2>Credits</h2><div><span>75,134 credits left</span><button>Add more</button></div><div>Turn on auto-refill</div></section>",
+    ).value,
+    75134,
+  );
+  // Styled number inside the label.
+  assert.equal(
+    p(
+      "<div><strong>75,134</strong> credits left</div><p>Plan credits 10,000</p>",
+    ).value,
+    75134,
+  );
+  // Usage menu: total available is the first number, not the plan total.
+  assert.equal(
+    p(
+      "<ul><li>Plan credits Max 10,000</li><li>Purchased credits 758,377</li><li>Bonus credits 5,500</li><li><span>Total available credits</span> <span>75,134 / 773,877</span></li></ul>",
+    ).value,
+    75134,
+  );
+  assert.equal(
+    p(
+      "<div><span>Total available credits</span><span>75,134 / 773,877</span></div><p>75,134 credits left</p>",
+    ).value,
+    75134,
+  );
+  assert.equal(p("<p>0 credits left</p>").value, 0);
+  assert.equal(p("<p>1 credit left</p>").value, 1);
+  assert.equal(p('<p aria-label="75,134 credits left">75K</p>').value, 75134);
+  assert.throws(
+    () => p("<p>Plan credits 10,000</p><p>Purchased credits 758,377</p>"),
+    /not found/,
+  );
+  assert.throws(
+    () => p("<p>75,134 credits left</p><p>80,000 credits left</p>"),
+    /Ambiguous/,
+  );
+  assert.throws(() => p("<p hidden>75,134 credits left</p>"), /not found/);
+  assert.throws(
+    () => p("<div><span>Total available credits</span><span>lots</span></div>"),
+    /could not be identified/,
+  );
 });

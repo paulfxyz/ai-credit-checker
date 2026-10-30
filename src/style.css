@@ -700,6 +700,16 @@ code {
   display: flex;
   gap: 8px;
 }
+.account-config select {
+  min-width: 0;
+  flex: 1;
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+}
 .account-config input {
   min-width: 0;
   flex: 1;

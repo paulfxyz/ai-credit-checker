@@ -12,7 +12,7 @@ Starting with 2.1.1, automatic update checks connect to GitHub's public Releases
 
 ## Storage
 
-The application's user-data directory contains `observations.json` and persistent browser session partitions. The history keeps the latest 2,000 check records. It records balances, units, scope, timestamps, extraction method and bounded error messages. Fly.io's organization slug is stored in preferences and attached to its new observations; Runware observations retain their full parsed precision.
+The application's user-data directory contains `observations.json` and persistent browser session partitions. Fly.io's sign-in cookie expires when the browser closes, so the app keeps first-party fly.io session cookies for up to 30 days inside the isolated Fly.io partition; cookies for other sites and providers are not changed. The history keeps the latest 2,000 check records. It records balances, units, scope, timestamps, extraction method and bounded error messages. Fly.io's organization slug is stored in preferences and attached to its new observations; Runware observations retain their full parsed precision.
 
 Browser sessions are sensitive. This document does not promise encryption for every file in the app directory. macOS and Chromium manage session storage; use your normal device account and disk protections.
 
